@@ -1888,7 +1888,16 @@ initSample();
 </script>
 
 <script>
-if("serviceWorker" in navigator){addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+if("serviceWorker" in navigator){
+  var hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange",function(){
+    if(!hadController){hadController=true;return;}
+    var t=document.createElement("div");t.className="toast";t.setAttribute("role","status");
+    t.innerHTML='App updated. <button type="button" style="margin-left:8px;border:none;border-radius:6px;padding:3px 9px;font:inherit;font-weight:600;cursor:pointer">Reload</button>';
+    t.querySelector("button").onclick=function(){location.reload();};document.body.appendChild(t);
+  });
+  addEventListener("load",function(){navigator.serviceWorker.register("sw.js").then(function(r){setInterval(function(){r.update().catch(function(){});},3600000);}).catch(function(){});});
+}
 </script>
 </body>
 </html>
