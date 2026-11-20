@@ -534,16 +534,16 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .upl.ok{background:var(--ok-soft);color:var(--ok)}
 .flow-wrap{display:flex;flex-direction:column;gap:10px}
 .flow{position:relative;height:380px;perspective:1200px;perspective-origin:50% 38%;outline:none;border-radius:12px;overflow:hidden}
-.orbit{position:absolute;left:50%;top:50%;pointer-events:none;transform-style:preserve-3d}
-.orbit::before{content:"";position:absolute;inset:6%;border-radius:50%;background:radial-gradient(closest-side, color-mix(in srgb, var(--a) 16%, transparent), transparent)}
-.orbit-rot{position:absolute;inset:0;border-radius:50%;border:2px dashed color-mix(in srgb, var(--a) 70%, transparent);transform:rotate(var(--spin,0deg))}
-.orbit-spin{position:absolute;inset:0;border-radius:50%;animation:spin 18s linear infinite}
-.orbit-spin i{position:absolute;left:50%;top:-6px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--a);box-shadow:0 0 14px 4px color-mix(in srgb, var(--a) 55%, transparent)}
+.orbit{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.orbit .o-fill{fill:color-mix(in srgb, var(--a) 9%, transparent);stroke:none}
+.orbit .o-line{fill:none;stroke:color-mix(in srgb, var(--a) 70%, transparent);stroke-width:2;stroke-dasharray:7 9;stroke-linecap:round}
+.orbit .o-dot{fill:var(--a)}
+.orbit .o-glow{fill:var(--a);opacity:.22}
 .flow::before{content:"";position:absolute;left:15%;right:15%;top:8%;bottom:8%;border-radius:50%;background:radial-gradient(closest-side, color-mix(in srgb, var(--a) 22%, transparent), transparent);animation:breathe 7s ease-in-out infinite alternate;pointer-events:none}
 .flow:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-.flow-stage{position:absolute;inset:0;transform-style:preserve-3d;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.flow-stage{position:absolute;inset:0;transform-style:flat;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .flow-stage.drag{cursor:grabbing}
-.fcard{position:absolute;left:50%;top:50%;width:200px;height:278px;padding:0;border:none;background:none;transition:opacity .25s ease;transform-style:preserve-3d;will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden;color:inherit;-webkit-tap-highlight-color:transparent}
+.fcard{position:absolute;left:50%;top:50%;width:200px;height:278px;padding:0;border:none;background:none;transition:opacity .25s ease;will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden;color:inherit;-webkit-tap-highlight-color:transparent}
 .flow-stage.drag .fcard{transition:none}
 .fcard-in{display:block;position:relative;width:100%;height:100%;border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px -22px var(--cap-bg);animation:float 6s ease-in-out infinite;animation-delay:var(--d,0s)}
 .fcard.on .fcard-in{box-shadow:0 28px 50px -22px color-mix(in srgb, var(--c) 70%, transparent),0 0 0 2px var(--c)}
@@ -1547,7 +1547,8 @@ function renderFlow(k,list,tot){
     det.classList.remove("swap");return;
   }
   flow.hidden=false;
-  stage.innerHTML='<div class="orbit" aria-hidden="true"><div class="orbit-rot"></div><div class="orbit-spin"><i></i></div></div>'+list.map((r,i)=>{
+  const mv=REDUCED?"":'<animateMotion dur="18s" repeatCount="indefinite"><mpath href="#orbp-'+k+'" xlink:href="#orbp-'+k+'"></mpath></animateMotion>';
+  stage.innerHTML='<svg class="orbit" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path class="o-fill" id="orbp-'+k+'"></path><path class="o-line"></path><circle class="o-glow" r="10">'+mv+'</circle><circle class="o-dot" r="4.5">'+mv+'</circle></svg>'+list.map((r,i)=>{
     const st=RSTAT[r.status]?r.status:"to-read",cov=/^data:image\/(jpeg|png|webp);base64,/.test(String(r.cover||""))?r.cover:"";
     const yr=Number(r.year)>0?String(r.year):"",sub=[yr,firstAuthor(r.authors)].filter(Boolean).join(" · ");
     return '<button type="button" class="fcard" data-act="flow-pick" data-k="'+k+'" data-id="'+esc(r.id)+'" style="--c:var(--c'+hueOf(r.title)+')" aria-label="'+esc(r.title)+'">'+
@@ -1561,25 +1562,39 @@ function renderFlow(k,list,tot){
 function flowGeom(k){
   const stage=document.getElementById(k+"Stage"),c=stage&&stage.querySelector(".fcard"),n=(ui.refList[k]||[]).length;
   const w=(c&&c.offsetWidth)||200,h=(c&&c.offsetHeight)||278,step=Math.max(24,Math.min(46,360/Math.max(n,1)));
-  return {n,w,h,step,R:(w*1.18)/(2*Math.sin(step*Math.PI/360)),loop:n>2};
+  const sw=(stage&&stage.clientWidth)||700,sh=(stage&&stage.clientHeight)||380;
+  let R=(w*1.18)/(2*Math.sin(step*Math.PI/360));
+  const fit=(sw/2-w*0.2)/Math.sin(Math.min(step,80)*Math.PI/180);
+  R=Math.min(R,Math.max(w*0.62,fit));
+  return {n,w,h,step,R,sw,sh,P:sw<560?720:950,oy:-h*0.45,loop:n>2};
 }
+// project a point on the ring (angle th degrees, height yOff) to the screen, as a camera slightly above would see it
+function flowProj(g,th,yOff){const t=th*Math.PI/180,z=g.R*(Math.cos(t)-1),s=g.P/(g.P-z);return {x:g.R*Math.sin(t)*s,y:yOff*s+g.oy*(1-s),s,z};}
 function wrapD(d,n,loop){if(!loop||!n)return d;d=((d%n)+n)%n;if(d>n/2)d-=n;return d;}
 function positionFlow(k,posArg){
   const stage=document.getElementById(k+"Stage");if(!stage)return;
   const ids=ui.refList[k]||[],sel=Math.max(0,ids.indexOf(ui.refSel[k]));
   const pos=posArg!=null?posArg:(ui.flowPos[k]!=null?ui.flowPos[k]:sel),g=flowGeom(k);
   stage.querySelectorAll(".fcard").forEach((c,i)=>{
-    const d=wrapD(i-pos,g.n,g.loop),th=d*g.step,a=Math.abs(th),hide=a>105;
-    c.style.transform="translate(-50%,-50%) translate3d(0,0,"+(-g.R).toFixed(1)+"px) rotateY("+th.toFixed(2)+"deg) translate3d(0,0,"+g.R.toFixed(1)+"px)";
-    c.style.zIndex=String(2000-Math.round(a*10));
+    const d=wrapD(i-pos,g.n,g.loop),th=d*g.step,a=Math.abs(th),hide=a>105,p=flowProj(g,th,0);
+    c.style.transform="translate(-50%,-50%) translate3d("+p.x.toFixed(1)+"px,"+p.y.toFixed(1)+"px,0) scale("+p.s.toFixed(4)+") perspective("+g.P+"px) rotateY("+th.toFixed(2)+"deg)";
+    c.style.zIndex=String(Math.round(1000+p.z));
     c.style.opacity=hide?"0":Math.max(0,Math.min(1,0.22+0.78*Math.cos(th*Math.PI/180))).toFixed(3);
-    c.style.pointerEvents=hide?"none":"";
+    c.style.visibility=a>120?"hidden":"";c.style.pointerEvents=hide?"none":"";
     c.classList.toggle("on",Math.abs(d)<0.5);c.tabIndex=-1;
   });
   const ob=stage.querySelector(".orbit");
-  if(ob){const s=(2*g.R).toFixed(0);ob.style.width=ob.style.height=s+"px";
-    ob.style.transform="translate(-50%,-50%) translate3d(0,"+(g.h*0.5+16).toFixed(0)+"px,"+(-g.R).toFixed(1)+"px) rotateX(90deg)";
-    ob.style.setProperty("--spin",(-(pos*g.step)%360).toFixed(2)+"deg");}
+  if(ob&&g.sw>0){
+    const key=[g.sw,g.sh,g.R.toFixed(1),g.h,g.P].join("|");
+    if(ob.dataset.key!==key){
+      ob.dataset.key=key;ob.setAttribute("viewBox",(-g.sw/2)+" "+(-g.sh/2)+" "+g.sw+" "+g.sh);
+      let dd="";for(let j=0;j<=96;j++){const p=flowProj(g,j/96*360,g.h*0.5+16);dd+=(j?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)+" ";}
+      ob.querySelectorAll("path").forEach(pa=>pa.setAttribute("d",dd+"Z"));
+      const ln=ob.querySelector(".o-line");ob.dataset.len=String(ln&&ln.getTotalLength?ln.getTotalLength():0);
+    }
+    const ln=ob.querySelector(".o-line"),len=Number(ob.dataset.len)||0;
+    if(ln&&len)ln.style.strokeDashoffset=(((pos*g.step)/360)*len).toFixed(1);
+  }
 }
 function flowMeta(k){
   const ids=ui.refList[k]||[],sel=Math.max(0,ids.indexOf(ui.refSel[k])),loop=ids.length>2;
