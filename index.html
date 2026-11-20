@@ -329,6 +329,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .mark .bob{animation:bob 4s ease-in-out infinite}
 @keyframes blinkEye{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.12)}96%{transform:scaleY(1)}}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+.topbar .mark{width:28px;height:28px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .nav-label{padding:0 12px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--on-navy-muted);margin-bottom:-18px}
 .nav{display:flex;flex-direction:column;gap:2px;position:relative}
@@ -1882,6 +1883,8 @@ try{MQ.addEventListener("change",()=>setSide(MQ.matches?"closed":sidePref));}cat
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(moveInd).catch(()=>{});
 buildProjectPages();
 setupImport();
+(function(){const m=document.querySelector(".brand .mark"),t=document.getElementById("topTitle");if(!m||!t)return;
+  const w=document.createElement("span");w.style.display="contents";w.innerHTML=m.outerHTML.replace(/id="mk/g,'id="tmk').replace(/url\(#mk/g,"url(#tmk");t.before(w.firstChild);})();
 tickClock();setInterval(tickClock,15000);
 setView(location.hash.slice(1));
 
@@ -1901,6 +1904,12 @@ if("serviceWorker" in navigator){
   });
   addEventListener("load",function(){navigator.serviceWorker.register("sw.js").then(function(r){setInterval(function(){r.update().catch(function(){});},3600000);}).catch(function(){});});
 }
+(function(){
+  var reduce=false;try{reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
+  var link=document.querySelector('link[rel="icon"][sizes="32x32"]');if(!link||reduce)return;
+  var open="icons/favicon-32.png",shut="icons/favicon-32-blink.png";new Image().src=shut;
+  setInterval(function(){if(document.hidden)return;link.href=shut;setTimeout(function(){link.href=open;},180);},5500);
+})();
 </script>
 </body>
 </html>
