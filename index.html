@@ -357,9 +357,16 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .topbar .btn{margin-left:auto;background:var(--on-navy);color:var(--navy);border-color:var(--on-navy)}
 .menu-btn{border:1px solid var(--navy-line);background:transparent;color:var(--on-navy);width:36px;height:36px;border-radius:9px;display:grid;place-items:center;flex:none}
 .menu-btn:hover{border-color:var(--on-navy)}
-.shell[data-side="closed"]{grid-template-columns:minmax(0,1fr)}
-.shell[data-side="closed"] .side{display:none}
+.shell{transition:grid-template-columns .46s cubic-bezier(.32,.72,0,1)}
+.side{transition:transform .46s cubic-bezier(.32,.72,0,1),opacity .32s ease,visibility 0s}
+.shell[data-side="closed"]{grid-template-columns:0px minmax(0,1fr)}
+.shell[data-side="closed"] .side{transform:translate3d(-100%,0,0);opacity:0;visibility:hidden;pointer-events:none;transition:transform .46s cubic-bezier(.32,.72,0,1),opacity .32s ease .08s,visibility 0s linear .46s}
 .shell[data-side="closed"] .topbar{display:flex}
+@media (min-width:901px){
+  .side{width:228px;min-width:228px}
+  .shell[data-side="closed"] .topbar{animation:topIn .42s cubic-bezier(.22,.8,.22,1) .12s both}
+}
+@keyframes topIn{from{opacity:0;transform:translate3d(0,-100%,0)}}
 .scrim{display:none}
 @media (max-width:900px){
   .shell{display:block}
@@ -382,6 +389,14 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   .menu-btn:active{transform:scale(.92)}
 }
 @keyframes sideIn{from{opacity:0;transform:translate3d(-16px,0,0)}}
+.shell[data-side="open"] .side>*{animation:sideIn .5s cubic-bezier(.22,.8,.22,1) both}
+.shell[data-side="open"] .side>:nth-child(2){animation-delay:.03s}
+.shell[data-side="open"] .side>:nth-child(3){animation-delay:.06s}
+.shell[data-side="open"] .side>:nth-child(4){animation-delay:.09s}
+.shell[data-side="open"] .side>:nth-child(5){animation-delay:.12s}
+.shell[data-side="open"] .side>:nth-child(6){animation-delay:.15s}
+.shell[data-side="open"] .side>:nth-child(7){animation-delay:.18s}
+.shell[data-side="open"] .side>:nth-child(8){animation-delay:.21s}
 
 /* ambient motion on navy bands */
 .band{position:relative;overflow:hidden;isolation:isolate}
@@ -518,12 +533,17 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .upl.err{background:var(--danger-soft);color:var(--danger)}
 .upl.ok{background:var(--ok-soft);color:var(--ok)}
 .flow-wrap{display:flex;flex-direction:column;gap:10px}
-.flow{position:relative;height:350px;perspective:1100px;outline:none;border-radius:12px}
+.flow{position:relative;height:380px;perspective:1200px;perspective-origin:50% 38%;outline:none;border-radius:12px;overflow:hidden}
+.orbit{position:absolute;left:50%;top:50%;pointer-events:none;transform-style:preserve-3d}
+.orbit::before{content:"";position:absolute;inset:6%;border-radius:50%;background:radial-gradient(closest-side, color-mix(in srgb, var(--a) 16%, transparent), transparent)}
+.orbit-rot{position:absolute;inset:0;border-radius:50%;border:1.5px dashed color-mix(in srgb, var(--a) 50%, transparent);transform:rotate(var(--spin,0deg))}
+.orbit-spin{position:absolute;inset:0;border-radius:50%;animation:spin 18s linear infinite}
+.orbit-spin i{position:absolute;left:50%;top:-6px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--a);box-shadow:0 0 14px 4px color-mix(in srgb, var(--a) 55%, transparent)}
 .flow::before{content:"";position:absolute;left:15%;right:15%;top:8%;bottom:8%;border-radius:50%;background:radial-gradient(closest-side, color-mix(in srgb, var(--a) 22%, transparent), transparent);animation:breathe 7s ease-in-out infinite alternate;pointer-events:none}
 .flow:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 .flow-stage{position:absolute;inset:0;transform-style:preserve-3d;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .flow-stage.drag{cursor:grabbing}
-.fcard{position:absolute;left:50%;top:50%;width:200px;height:278px;padding:0;border:none;background:none;transition:transform .55s cubic-bezier(.22,.8,.22,1),opacity .45s ease;transform-style:preserve-3d;will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden;color:inherit;-webkit-tap-highlight-color:transparent}
+.fcard{position:absolute;left:50%;top:50%;width:200px;height:278px;padding:0;border:none;background:none;transition:opacity .25s ease;transform-style:preserve-3d;will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden;color:inherit;-webkit-tap-highlight-color:transparent}
 .flow-stage.drag .fcard{transition:none}
 .fcard-in{display:block;position:relative;width:100%;height:100%;border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px -22px var(--cap-bg);animation:float 6s ease-in-out infinite;animation-delay:var(--d,0s)}
 .fcard.on .fcard-in{box-shadow:0 28px 50px -22px color-mix(in srgb, var(--c) 70%, transparent),0 0 0 2px var(--c)}
@@ -554,7 +574,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .ghosts i{width:46px;height:62px;border-radius:7px;background:var(--sunk);border:1px solid var(--line);animation:float 5s ease-in-out infinite}
 .ghosts i:nth-child(2){animation-delay:-1.6s;transform:translateY(-6px)}
 .ghosts i:nth-child(3){animation-delay:-3.2s}
-@media (max-width:640px){.flow{height:290px}.fcard{width:160px;height:222px}.fcover{font-size:15px}.flow-nav{width:34px;height:34px}}
+@media (max-width:640px){.flow{height:310px}.fcard{width:160px;height:222px}.fcover{font-size:15px}.flow-nav{width:34px;height:34px}}
 
 /* logbook */
 .lb-panel{display:flex;flex-direction:column;gap:10px}
@@ -1221,8 +1241,8 @@ document.addEventListener("click",e=>{
   else if(a==="pdf-pick"){if(readOnly){toast("You can view this desk but not change it.");return;}const i=document.getElementById(b.dataset.k+"PdfIn");if(i)i.click();}
   else if(a==="ref-view"){ui.refView[b.dataset.k]=b.dataset.v;saveRefUi();renderRefs(b.dataset.k);}
   else if(a==="flow-step")stepFlow(b.dataset.k,Number(b.dataset.d)||0);
-  else if(a==="flow-pick"){const k=b.dataset.k,id=b.dataset.id;if(ui.refSel[k]!==id){ui.refSel[k]=id;positionFlow(k);renderDetail(k,true);}else{const d=document.getElementById(k+"Detail");if(d&&d.scrollIntoView)d.scrollIntoView({behavior:"smooth",block:"nearest"});}}
-  else if(a==="flow-dot"){const k=b.dataset.k,id=(ui.refList[k]||[])[Number(b.dataset.i)];if(id&&id!==ui.refSel[k]){ui.refSel[k]=id;positionFlow(k);renderDetail(k,true);}}
+  else if(a==="flow-pick"){const k=b.dataset.k,id=b.dataset.id,i=(ui.refList[k]||[]).indexOf(id);if(ui.refSel[k]!==id&&i>=0){flowTo(k,i);}else{const d=document.getElementById(k+"Detail");if(d&&d.scrollIntoView)d.scrollIntoView({behavior:"smooth",block:"nearest"});}}
+  else if(a==="flow-dot"){const k=b.dataset.k,i=Number(b.dataset.i),id=(ui.refList[k]||[])[i];if(id&&id!==ui.refSel[k])flowTo(k,i);}
   else if(a==="lb-toggle"){lb.open=!lb.open;if(lb.status==="error")lb.status="idle";renderLbPanel();}
   else if(a==="lb-pick"){if(readOnly){toast("You can view this desk but not change it.");return;}const i=document.getElementById("lbIn");if(i)i.click();}
   else if(a==="lb-stop"){if(lb.ctl)lb.ctl.abort();}
@@ -1373,6 +1393,7 @@ function tickClock(){
 let assetsNs=null,imgMax=5;
 const SEM_WEEKS=14;
 const SORTS=[["latest","Recently added"],["yearNew","Newest year"],["yearOld","Oldest year"],["title","Title A–Z"],["status","Reading status"]];
+ui.flowPos={};const flowAnim={};
 ui.refView={fyp:"float",idp:"float"};ui.refSort={fyp:"latest",idp:"latest"};ui.refSel={};ui.refList={};ui.upl={fyp:[],idp:[]};ui.lbAll=false;
 try{const v=JSON.parse(localStorage.getItem("fyd.refui")||"null");if(v){if(v.view)Object.assign(ui.refView,v.view);if(v.sort)Object.assign(ui.refSort,v.sort);}}catch(e){}
 function saveRefUi(){try{localStorage.setItem("fyd.refui",JSON.stringify({view:ui.refView,sort:ui.refSort}));}catch(e){}}
@@ -1420,26 +1441,27 @@ function buildProjectPages(){
     flow.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"){e.preventDefault();stepFlow(k,-1);}else if(e.key==="ArrowRight"){e.preventDefault();stepFlow(k,1);}});
     // finger-following swipe: cards track the drag, then glide to the nearest article
     let sx=null,sy=null,moved=false,lastW=0,pos0=0,dragX=0,lastX=0,lastT=0,vel=0,raf=0,axis=null;
-    const stepPx=()=>{const c=stage.querySelector(".fcard");return ((c&&c.offsetWidth)||200)*((stage.clientWidth||600)<560?0.58:0.7);};
+    const stepPx=()=>{const c=stage.querySelector(".fcard");return ((c&&c.offsetWidth)||200)*0.8;};
     stage.addEventListener("pointerdown",e=>{
       if(e.button!==undefined&&e.button!==0)return;const ids=ui.refList[k]||[];if(!ids.length)return;
-      sx=lastX=e.clientX;sy=e.clientY;lastT=performance.now();vel=0;moved=false;axis=null;dragX=0;pos0=Math.max(0,ids.indexOf(ui.refSel[k]));
+      cancelAnimationFrame(flowAnim[k]);
+      sx=lastX=e.clientX;sy=e.clientY;lastT=performance.now();vel=0;moved=false;axis=null;dragX=0;pos0=flowCur(k);
     });
     window.addEventListener("pointermove",e=>{
       if(sx===null)return;const dx=e.clientX-sx,dy=e.clientY-sy;
       if(!axis){if(Math.abs(dx)<6&&Math.abs(dy)<6)return;axis=Math.abs(dx)>Math.abs(dy)?"x":"y";if(axis==="x"){moved=true;stage.classList.add("drag");}}
       if(axis!=="x")return;
       const now=performance.now();vel=((e.clientX-lastX)/Math.max(1,now-lastT))*0.7+vel*0.3;lastX=e.clientX;lastT=now;dragX=dx;
-      if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(sx===null)return;const n=(ui.refList[k]||[]).length;let p=pos0-dragX/stepPx();if(p<0)p*=0.3;if(p>n-1)p=(n-1)+(p-(n-1))*0.3;positionFlow(k,p);});
+      if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(sx===null)return;const g=flowGeom(k);let p=pos0-dragX/stepPx();
+        if(!g.loop){if(p<0)p*=0.3;if(p>g.n-1)p=(g.n-1)+(p-(g.n-1))*0.3;}ui.flowPos[k]=p;positionFlow(k,p);});
     });
     const end=()=>{
       if(sx===null)return;sx=null;if(raf){cancelAnimationFrame(raf);raf=0;}
-      if(axis!=="x"){axis=null;return;}axis=null;
-      const ids=ui.refList[k]||[],n=ids.length;if(!n){stage.classList.remove("drag");return;}
+      if(axis!=="x"){axis=null;return;}axis=null;stage.classList.remove("drag");
+      if(!(ui.refList[k]||[]).length)return;
       const fresh=performance.now()-lastT<90?vel:0;
-      const tgt=Math.max(0,Math.min(n-1,Math.round(pos0-(dragX+fresh*220)/stepPx())));
-      void stage.offsetWidth;stage.classList.remove("drag");
-      const changed=ids[tgt]!==ui.refSel[k];ui.refSel[k]=ids[tgt];positionFlow(k);if(changed)renderDetail(k,true);
+      ui.flowPos[k]=pos0-dragX/stepPx();
+      flowGo(k,Math.round(pos0-(dragX+fresh*260)/stepPx()));
     };
     window.addEventListener("pointerup",end);window.addEventListener("pointercancel",end);
     stage.addEventListener("click",e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false;}},true);
@@ -1525,36 +1547,64 @@ function renderFlow(k,list,tot){
     det.classList.remove("swap");return;
   }
   flow.hidden=false;
-  stage.innerHTML=list.map((r,i)=>{
+  stage.innerHTML='<div class="orbit" aria-hidden="true"><div class="orbit-rot"></div><div class="orbit-spin"><i></i></div></div>'+list.map((r,i)=>{
     const st=RSTAT[r.status]?r.status:"to-read",cov=/^data:image\/(jpeg|png|webp);base64,/.test(String(r.cover||""))?r.cover:"";
     const yr=Number(r.year)>0?String(r.year):"",sub=[yr,firstAuthor(r.authors)].filter(Boolean).join(" · ");
     return '<button type="button" class="fcard" data-act="flow-pick" data-k="'+k+'" data-id="'+esc(r.id)+'" style="--c:var(--c'+hueOf(r.title)+')" aria-label="'+esc(r.title)+'">'+
       '<span class="fcard-in" style="--d:'+(-(i%5)*1.2).toFixed(1)+'s">'+(cov?'<img src="'+esc(cov)+'" alt="">':'<span class="fcover"><span>'+esc(r.title)+'</span></span>')+
       '<span class="fcap"><b>'+esc(r.title)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':"")+'</span><span class="fstat pill '+RSTAT[st][1]+'">'+RSTAT[st][0]+'</span></span></button>';
   }).join("");
-  positionFlow(k);renderDetail(k,false);
+  cancelAnimationFrame(flowAnim[k]);ui.flowPos[k]=Math.max(0,list.findIndex(r=>r.id===ui.refSel[k]));
+  positionFlow(k);flowMeta(k);renderDetail(k,false);
 }
+/* orbit: cards sit on a 3D ring; pos is a (fractional) index that the ring turns to */
+function flowGeom(k){
+  const stage=document.getElementById(k+"Stage"),c=stage&&stage.querySelector(".fcard"),n=(ui.refList[k]||[]).length;
+  const w=(c&&c.offsetWidth)||200,h=(c&&c.offsetHeight)||278,step=Math.max(24,Math.min(46,360/Math.max(n,1)));
+  return {n,w,h,step,R:(w*0.82)/(2*Math.sin(step*Math.PI/360)),loop:n>2};
+}
+function wrapD(d,n,loop){if(!loop||!n)return d;d=((d%n)+n)%n;if(d>n/2)d-=n;return d;}
 function positionFlow(k,posArg){
   const stage=document.getElementById(k+"Stage");if(!stage)return;
-  const ids=ui.refList[k]||[],sel=Math.max(0,ids.indexOf(ui.refSel[k])),pos=posArg==null?sel:posArg,sp=(stage.clientWidth||600)<560?58:70;
+  const ids=ui.refList[k]||[],sel=Math.max(0,ids.indexOf(ui.refSel[k]));
+  const pos=posArg!=null?posArg:(ui.flowPos[k]!=null?ui.flowPos[k]:sel),g=flowGeom(k);
   stage.querySelectorAll(".fcard").forEach((c,i)=>{
-    const d=i-pos,a=Math.abs(d),cl=Math.max(-1,Math.min(1,d));
-    const sc=Math.max(.6,1-Math.min(a,1)*.14-Math.max(0,a-1)*.07);
-    c.style.transform="translate(-50%,-50%) translate3d("+(d*sp).toFixed(2)+"%,0,"+(-a*120).toFixed(1)+"px) rotateY("+(-cl*34).toFixed(2)+"deg) scale("+sc.toFixed(3)+")";
-    c.style.zIndex=String(1000-Math.round(a*100));c.style.opacity=a>3.5?"0":Math.max(0,1-a*.2).toFixed(3);c.style.pointerEvents=a>3.2?"none":"";
-    c.classList.toggle("on",Math.round(pos)===i);c.tabIndex=-1;
+    const d=wrapD(i-pos,g.n,g.loop),th=d*g.step,a=Math.abs(th),hide=a>105;
+    c.style.transform="translate(-50%,-50%) translate3d(0,0,"+(-g.R).toFixed(1)+"px) rotateY("+th.toFixed(2)+"deg) translate3d(0,0,"+g.R.toFixed(1)+"px)";
+    c.style.zIndex=String(2000-Math.round(a*10));
+    c.style.opacity=hide?"0":Math.max(0,Math.min(1,0.22+0.78*Math.cos(th*Math.PI/180))).toFixed(3);
+    c.style.pointerEvents=hide?"none":"";
+    c.classList.toggle("on",Math.abs(d)<0.5);c.tabIndex=-1;
   });
-  if(posArg!=null)return;
+  const ob=stage.querySelector(".orbit");
+  if(ob){const s=(2*g.R).toFixed(0);ob.style.width=ob.style.height=s+"px";
+    ob.style.transform="translate(-50%,-50%) translate3d(0,"+(g.h*0.5+16).toFixed(0)+"px,"+(-g.R).toFixed(1)+"px) rotateX(90deg)";
+    ob.style.setProperty("--spin",(-(pos*g.step)%360).toFixed(2)+"deg");}
+}
+function flowMeta(k){
+  const ids=ui.refList[k]||[],sel=Math.max(0,ids.indexOf(ui.refSel[k])),loop=ids.length>2;
   const prev=document.querySelector('#'+k+'Flow .prev'),next=document.querySelector('#'+k+'Flow .next');
-  if(prev)prev.disabled=sel<=0;if(next)next.disabled=sel>=ids.length-1;
+  if(prev)prev.disabled=!loop&&sel<=0;if(next)next.disabled=!loop&&sel>=ids.length-1;
   const meta=document.getElementById(k+"FlowMeta");
   if(meta)meta.innerHTML=ids.length<=14?ids.map((id,i)=>'<button type="button" class="fdot'+(i===sel?" on":"")+'" data-act="flow-dot" data-k="'+k+'" data-i="'+i+'" aria-label="Article '+(i+1)+'"></button>').join(""):'<span class="mono muted" style="font-size:12px">'+(sel+1)+" / "+ids.length+'</span>';
 }
-function stepFlow(k,d){
-  const ids=ui.refList[k]||[];if(!ids.length)return;
-  const cur=Math.max(0,ids.indexOf(ui.refSel[k])),nx=Math.max(0,Math.min(ids.length-1,cur+d));if(nx===cur)return;
-  ui.refSel[k]=ids[nx];positionFlow(k);renderDetail(k,true);
+function flowCur(k){const ids=ui.refList[k]||[];return ui.flowPos[k]!=null?ui.flowPos[k]:Math.max(0,ids.indexOf(ui.refSel[k]));}
+function flowGo(k,target,instant){
+  const ids=ui.refList[k]||[],n=ids.length;if(!n)return;
+  const g=flowGeom(k);if(!g.loop)target=Math.max(0,Math.min(n-1,target));
+  const from=flowCur(k),idx=((Math.round(target)%n)+n)%n,changed=ids[idx]!==ui.refSel[k];ui.refSel[k]=ids[idx];
+  cancelAnimationFrame(flowAnim[k]);
+  const done=()=>{ui.flowPos[k]=idx;positionFlow(k,idx);};
+  if(instant||REDUCED||Math.abs(target-from)<0.001)done();
+  else{
+    const t0=performance.now(),dur=Math.min(1000,460+Math.abs(target-from)*110);
+    const tick=now=>{const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3),v=from+(target-from)*e;ui.flowPos[k]=v;positionFlow(k,v);if(p<1)flowAnim[k]=requestAnimationFrame(tick);else done();};
+    flowAnim[k]=requestAnimationFrame(tick);
+  }
+  flowMeta(k);if(changed)renderDetail(k,true);
 }
+function stepFlow(k,d){if(!(ui.refList[k]||[]).length)return;flowGo(k,Math.round(flowCur(k))+d);}
+function flowTo(k,i){const g=flowGeom(k),cur=flowCur(k);flowGo(k,Math.round(cur)+Math.round(wrapD(i-Math.round(cur),g.n,g.loop)));}
 function renderDetail(k,animate){
   const el=document.getElementById(k+"Detail");if(!el)return;
   const r=S.refs[ui.refSel[k]];if(!r){el.innerHTML="";return;}
@@ -1771,6 +1821,7 @@ function setSide(state,persist){
   if(persist&&!MQ.matches){sidePref=state;try{localStorage.setItem("fyd.side",state);}catch(e){}}
   if(state==="open")setTimeout(moveInd,40);
   setTimeout(()=>{positionFlow("fyp");positionFlow("idp");},60);
+  setTimeout(()=>{moveInd();positionFlow("fyp");positionFlow("idp");},500);
 }
 
 /* ---------- timetable import ---------- */

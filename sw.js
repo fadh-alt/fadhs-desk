@@ -1,5 +1,5 @@
-// Fadh's Desk offline worker, build 20261120185138
-const SHELL = "fyd-shell-20261120185138";
+// Fadh's Desk offline worker, build 20261120185712
+const SHELL = "fyd-shell-20261120185712";
 const RUNTIME = "fyd-runtime-v1";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/favicon-32-blink.png"];
 const LIBS = [
