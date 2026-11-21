@@ -1,13 +1,13 @@
 {
-  "name": "Fadh's Desk",
-  "short_name": "Fadh's Desk",
-  "description": "Tasks, calendar, timetable, FYP and IDP progress in one place.",
+  "name": "dash-io",
+  "short_name": "dash-io",
+  "description": "Your personal desk: tasks, calendar, timetable, projects and music.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0d1b38",
+  "background_color": "#081329",
   "theme_color": "#0d1b38",
   "icons": [
     {
