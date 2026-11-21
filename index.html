@@ -869,6 +869,14 @@ video.dv-img{background:#000}
 @media (max-width:480px){.rep-btns{grid-template-columns:1fr}}
 @media (max-width:560px){.kpis,.kpis.n3{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kpis.n3>:first-child{grid-column:1 / -1}.kpi{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}.kpi .ringw{width:54px;height:54px}.kpi .ring-n{font-size:12.5px}.kv{font-size:17px}}
 /* player controls */
+.allow-card{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 18px;border-radius:22px;color:#fff;background:linear-gradient(120deg,#1ed760 -40%,var(--t-base2) 55%);border:1px solid rgba(255,255,255,.16);box-shadow:var(--glass-shadow)}
+.allow-card p{margin:3px 0 0;font-size:13px;color:rgba(255,255,255,.85);line-height:1.45}
+.allow-card .btn.primary{background:#1ed760;color:#06260f;border-color:#1ed760}
+.allow-card .btn.ghost{color:#fff}
+.allow-ic{width:44px;height:44px;border-radius:50%;background:#1ed760;color:#06260f;display:grid;place-items:center;flex:none}
+.allow-ic svg{width:20px;height:20px}
+.allow-card.pulse{animation:allowPulse 1.2s cubic-bezier(.2,.8,.2,1)}
+@keyframes allowPulse{0%{transform:scale(1)}20%{transform:scale(1.025);box-shadow:0 0 0 6px rgba(30,215,96,.35)}100%{transform:scale(1)}}
 .np-ctl{display:flex;flex-direction:column;gap:12px;margin-top:16px}
 .np-seek-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:11.5px;color:rgba(255,255,255,.75)}
 .np input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;cursor:pointer;margin:0;--p:0%}
@@ -1197,7 +1205,9 @@ function renderNotes(){
   el.innerHTML=h;el.style.display=h?"flex":"none";el.style.flexDirection="column";el.style.gap="8px";
 }
 
+function spFlash(){if(!SP.flash)return;const f=SP.flash;SP.flash="";setTimeout(()=>toast(f==="web"?"Done! Pick “This browser” in Play on to hear music here.":"Spotify connected · tap any song to play it",null,4500),900);if(f==="web"&&webPlayable())setTimeout(()=>spOpenDevices(""),1200);}
 function afterLoad(){
+  spFlash();
   navKey="";renderNavLinks();
   const h=location.hash.slice(1);if((VIEWS[h]||isCustom(h))&&hasPage(h)&&h!==view)setView(h);else if(!hasPage(view))setView("desk");
   bootDone();if(booted&&!document.getElementById("splash"))replayEnter();
@@ -2664,7 +2674,8 @@ setTimeout(bootDone,3200);
     const lk=m.querySelector(".look");if(lk)lk.style.transform="translate("+(dx/d*3.2*k).toFixed(2)+"px,"+(dy/d*2.4*k).toFixed(2)+"px)";});},{passive:true});
 })();
 /* ---------- music (Spotify, Authorization Code with PKCE; tokens stay on this device) ---------- */
-const SP_SCOPES="user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-recently-played user-top-read streaming user-read-email user-read-private";
+const SP_SCOPES="user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-recently-played user-top-read";
+const SP_SCOPES_WEB=SP_SCOPES+" streaming user-read-email user-read-private";
 const SP={cid:"",tok:null,data:{},err:"",busy:false,range:"short_term",lastFull:0,lastNow:0,linkNote:false,devs:null,devOpen:false,web:null,webDev:"",webState:"",seeking:false,pending:false};
 const spRedirect=()=>location.origin+location.pathname.replace(/index\.html$/,"");
 const spCan=()=>PWA&&(location.protocol==="https:"||location.hostname==="127.0.0.1");
@@ -2682,20 +2693,21 @@ function spLoad(){
 const spSaveTok=()=>lsSet("dashio.sp.tok",SP.tok?JSON.stringify(SP.tok):null);
 const spSaveData=()=>lsSet("dashio.sp.cache",JSON.stringify(SP.data));
 const spOn=()=>!!(SP.tok&&SP.tok.r&&SP.cid);
-const spCanControl=()=>spOn()&&/user-modify-playback-state/.test(String(SP.tok.s||""));
+const spCanControl=()=>spOn()&&!SP.tok.noCtl&&(!SP.tok.s||/user-modify-playback-state/.test(String(SP.tok.s)));
 const spCanStream=()=>spOn()&&/\bstreaming\b/.test(String(SP.tok.s||""));
 function b64url(bytes){let s="";new Uint8Array(bytes).forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
 const b64urlText=t=>b64url(new TextEncoder().encode(t));
 const unb64url=t=>{const s=atob(String(t).replace(/-/g,"+").replace(/_/g,"/"));return new TextDecoder().decode(Uint8Array.from(s,c=>c.charCodeAt(0)));};
 function randStr(n){const c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join("");}
-async function spConnect(){
+async function spConnect(web){
   const inp=document.getElementById("spCid");if(inp)SP.cid=inp.value.trim();
   if(!/^[0-9a-f]{32}$/i.test(SP.cid)){SP.err="That doesn't look like a Spotify Client ID. It's 32 letters and numbers from your app's settings page.";renderMusic();return;}
   lsSet("dashio.sp.cid",SP.cid);
   const verifier=randStr(64),nonce=randStr(16);
   const challenge=b64url(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier)));
-  lsSet("dashio.sp.pkce",JSON.stringify({n:nonce,v:verifier,c:SP.cid}));
-  const q=new URLSearchParams({client_id:SP.cid,response_type:"code",redirect_uri:spRedirect(),code_challenge_method:"S256",code_challenge:challenge,scope:SP_SCOPES,state:b64urlText(JSON.stringify({n:nonce,v:verifier,c:SP.cid}))});
+  const scope=web===true||spCanStream()?SP_SCOPES_WEB:SP_SCOPES;
+  lsSet("dashio.sp.pkce",JSON.stringify({n:nonce,v:verifier,c:SP.cid,s:scope}));
+  const q=new URLSearchParams({client_id:SP.cid,response_type:"code",redirect_uri:spRedirect(),code_challenge_method:"S256",code_challenge:challenge,scope,state:b64urlText(JSON.stringify({n:nonce,v:verifier,c:SP.cid,s:scope}))});
   location.href="https://accounts.spotify.com/authorize?"+q.toString();
 }
 async function spTokenReq(body){
@@ -2712,14 +2724,14 @@ async function spHandleRedirect(){
   if(!st||!st.n)return;
   if(q.get("error")){SP.err=q.get("error")==="access_denied"?"Spotify connection was cancelled.":"Spotify said: "+q.get("error");return;}
   let local=null;try{local=JSON.parse(lsGet("dashio.sp.pkce")||"null");}catch(e){}
-  const verifier=local&&local.n===st.n?local.v:st.v,cid=local&&local.n===st.n?local.c:st.c;
+  const verifier=local&&local.n===st.n?local.v:st.v,cid=local&&local.n===st.n?local.c:st.c,asked=String((local&&local.n===st.n?local.s:st.s)||SP_SCOPES);
   lsSet("dashio.sp.pkce",null);
   if(!verifier||!cid){SP.err="The Spotify sign-in couldn't be finished. Press Connect again.";return;}
   try{
     const j=await spTokenReq({grant_type:"authorization_code",code:q.get("code"),redirect_uri:spRedirect(),client_id:cid,code_verifier:verifier});
     SP.cid=cid;lsSet("dashio.sp.cid",cid);
-    SP.tok={a:j.access_token,r:j.refresh_token,e:Date.now()+(Number(j.expires_in)||3600)*1000-60000,s:String(j.scope||"")};spSaveTok();
-    SP.err="";SP.justLinked=true;
+    SP.tok={a:j.access_token,r:j.refresh_token,e:Date.now()+(Number(j.expires_in)||3600)*1000-60000,s:String(j.scope||asked)};spSaveTok();
+    SP.err="";SP.justLinked=true;SP.flash=/\bstreaming\b/.test(SP.tok.s)&&/\bstreaming\b/.test(asked)?"web":"ok";
     let standalone=false;try{standalone=navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;}catch(e){}
     SP.linkNote=IS_IOS&&!standalone;
   }catch(e){SP.err=e&&e.code==="invalid_client"?"Spotify didn't accept that Client ID. Check it in your Spotify app settings.":e&&e.code==="invalid_grant"?"Spotify sign-in expired. Press Connect again.":"Couldn't finish connecting to Spotify. Check the Redirect URI in your Spotify app matches exactly, then try again.";}
@@ -2744,7 +2756,7 @@ async function spApi(method,path,body,retry){
   if(r.status===204||r.status===202)return null;
   if(r.status===401&&!retry){await spToken(true);return spApi(method,path,body,true);}
   let j=null;const txt=await r.text().catch(()=>"");try{j=txt?JSON.parse(txt):null;}catch(e){j=null;}
-  if(!r.ok){const er=j&&j.error||{};throw {code:r.status===403?"forbidden":r.status===404?"not_found":r.status===429?"rate_limited":"http_"+r.status,reason:String(er.reason||""),message:String(er.message||"")};}
+  if(!r.ok){const er=j&&j.error||{};if(r.status===403&&/scope/i.test(String(er.message||"")))throw {code:"scope",reason:"",message:String(er.message||"")};throw {code:r.status===403?"forbidden":r.status===404?"not_found":r.status===429?"rate_limited":"http_"+r.status,reason:String(er.reason||""),message:String(er.message||"")};}
   return j;
 }
 const spGet=path=>spApi("GET",path);
@@ -2778,7 +2790,8 @@ async function spRefresh(full){
     SP.data.at=Date.now();spSaveData();SP.err="";
   }catch(e){
     const c=e&&e.code;
-    if(c==="forbidden")SP.err="Spotify blocked this account. In your Spotify app's settings, open User Management and add the email of the Spotify account you signed in with.";
+    if(c==="scope"){}
+    else if(c==="forbidden")SP.err="Spotify blocked this account. In your Spotify app's settings, open User Management and add the email of the Spotify account you signed in with.";
     else if(c==="rate_limited")SP.err="Spotify asked us to slow down. Trying again shortly.";
     else if(c!=="not_connected"&&!SP.err)SP.err="Couldn't reach Spotify right now.";
   }finally{SP.busy=false;}
@@ -2816,6 +2829,7 @@ async function spCtl(action,arg){
     else if(action==="play"){await spApi("PUT","/me/player/play"+spDevQ(),arg);toast("Playing");}
     SP.err="";
   }catch(e){
+    if(e&&e.code==="scope"){SP.tok.noCtl=true;spSaveTok();spAskControl();return;}
     if(e&&e.code==="not_found"||e&&e.reason==="NO_ACTIVE_DEVICE"){SP.pendingPlay={action,arg};spOpenDevices(SP_ERR.NO_ACTIVE_DEVICE);return;}
     toast(e&&e.reason==="PREMIUM_REQUIRED"?SP_ERR.PREMIUM_REQUIRED:e&&e.code==="rate_limited"?"Spotify asked to slow down. Try again in a moment.":SP_ERR.UNKNOWN);
   }
@@ -2825,9 +2839,10 @@ function spDevQ(){return SP.forceDev?"?device_id="+encodeURIComponent(SP.forceDe
 let spSoonT=0;
 function spSoon(){clearTimeout(spSoonT);SP.pending=false;spSoonT=setTimeout(()=>spRefresh(false),450);setTimeout(()=>spRefresh(false),1600);}
 function spAskControl(){
-  SP.needControl=true;
+  SP.needControl=true;SP.devOpen=false;renderDevSheet();
   if(view!=="music"){setView("music");try{history.replaceState(null,"","#music");}catch(e){}}
-  renderMusic();toast("Allow playback control once to play from dash-io");
+  renderMusic();try{window.scrollTo({top:0,behavior:"smooth"});}catch(e){}
+  const n=document.querySelector("#viewMusic .allow-card");if(n){n.classList.remove("pulse");void n.offsetWidth;n.classList.add("pulse");}
 }
 async function spPlayItem(uri,ctx){
   uri=spUri(uri);if(!uri)return;
@@ -2837,7 +2852,7 @@ async function spPlayItem(uri,ctx){
 }
 async function spOpenDevices(msg){
   SP.devOpen=true;SP.devMsg=msg||"";SP.devs=null;renderDevSheet();
-  try{const j=await spGet("/me/player/devices");SP.devs=(j&&j.devices||[]).map(d=>({id:String(d.id||""),name:String(d.name||""),type:String(d.type||""),active:!!d.is_active,restricted:!!d.is_restricted}));}
+  try{const j=await spGet("/me/player/devices");if(false)throw 0;SP.devs=(j&&j.devices||[]).map(d=>({id:String(d.id||""),name:String(d.name||""),type:String(d.type||""),active:!!d.is_active,restricted:!!d.is_restricted}));}
   catch(e){SP.devs=[];}
   renderDevSheet();
 }
@@ -2847,12 +2862,12 @@ function renderDevSheet(){
   if(!SP.devOpen){if(el){el.classList.add("closing");setTimeout(()=>el&&el.remove(),260);}return;}
   if(!el){el=document.createElement("div");el.id="devSheet";el.className="dev-sheet";el.setAttribute("role","dialog");el.setAttribute("aria-label","Choose where to play");document.body.appendChild(el);}
   el.classList.remove("closing");
-  const devs=SP.devs,web=webPlayable()&&spCanStream();
+  const devs=SP.devs,web=webPlayable();
   let list="";
   if(devs===null)list='<div class="empty"><span class="reading"><i></i><i></i><i></i></span> Looking for your devices…</div>';
   else{
     list=devs.filter(d=>d.id&&d.id!==SP.webDev).map(d=>'<button type="button" class="dev'+(d.active?" on":"")+'" data-act="sp-dev" data-id="'+esc(d.id)+'"'+(d.restricted?" disabled":"")+'><span class="dev-ic">'+(DEV_IC[d.type]||"🎵")+'</span><span><b>'+esc(d.name||"Device")+'</b><small>'+esc(d.type)+(d.active?" · playing here":"")+(d.restricted?" · can't be controlled":"")+'</small></span>'+(d.active?eqHtml(SP.data.now&&SP.data.now.playing):"")+'</button>').join("");
-    if(web)list+='<button type="button" class="dev'+(SP.webDev&&devs.some(d=>d.id===SP.webDev&&d.active)?" on":"")+'" data-act="sp-dev-web"><span class="dev-ic">✨</span><span><b>This browser (dash-io)</b><small>'+(SP.webState==="loading"?"Starting the player…":SP.webState==="error"?esc(SP.webErr||"Couldn't start here"):"Play the music right here")+'</small></span></button>';
+    if(web)list+='<button type="button" class="dev'+(SP.webDev&&devs.some(d=>d.id===SP.webDev&&d.active)?" on":"")+'" data-act="sp-dev-web"><span class="dev-ic">✨</span><span><b>This browser (dash-io)</b><small>'+(SP.webState==="loading"?"Starting the player…":SP.webState==="error"?esc(SP.webErr||"Couldn't start here"):spCanStream()?"Play the music right here":"Play right here · Spotify asks once")+'</small></span></button>';
     if(!devs.filter(d=>d.id!==SP.webDev).length)list+='<div class="muted" style="font-size:13px;padding:4px 2px">No other devices found. Open the Spotify app on your phone or computer and play anything for a second, then refresh.</div>';
   }
   el.innerHTML='<div class="dev-bd" data-act="sp-dev-close"></div><div class="dev-card"><div class="card-head"><div><div class="eyebrow">Spotify</div><h3>Play on</h3></div><button class="icon-btn" type="button" data-act="sp-dev-close" aria-label="Close">✕</button></div>'+
@@ -2860,16 +2875,16 @@ function renderDevSheet(){
     '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="button" data-act="sp-open-app" data-uri="'+esc((SP.data.now&&SP.data.now.t&&SP.data.now.t.uri)||"spotify:")+'">Open the Spotify app</button><button class="btn small ghost" type="button" data-act="sp-dev-refresh">↻ Refresh</button></div></div>';
 }
 async function spTransfer(id,play){
-  try{await spApi("PUT","/me/player",{device_ids:[id],play:play!==false});SP.forceDev="";
+  try{await spApi("PUT","/me/player",{device_ids:[id],play:play!==false});SP.forceDev="";if(SP.tok.noCtl){SP.tok.noCtl=false;spSaveTok();}
     if(SP.pendingPlay){const p=SP.pendingPlay;SP.pendingPlay=null;setTimeout(()=>spCtl(p.action,p.arg),500);}
     SP.devOpen=false;renderDevSheet();toast("Switched device");spSoon();}
-  catch(e){toast(e&&e.reason==="PREMIUM_REQUIRED"?SP_ERR.PREMIUM_REQUIRED:"Couldn't switch to that device. Open Spotify on it first.");}
+  catch(e){if(e&&e.code==="scope"){SP.tok.noCtl=true;spSaveTok();SP.devOpen=false;renderDevSheet();spAskControl();return;}toast(e&&e.reason==="PREMIUM_REQUIRED"?SP_ERR.PREMIUM_REQUIRED:"Couldn't switch to that device. Open Spotify on it first.");}
 }
 /* in-browser player (Spotify Web Playback SDK, computers only) */
 function spWebStart(){
   if(SP.web&&SP.webDev){spTransfer(SP.webDev,true);return;}
   if(!webPlayable()){toast("This browser can't play Spotify. Use the Spotify app.");return;}
-  if(!spCanStream()){spAskControl();return;}
+  if(!spCanStream()){SP.devOpen=false;renderDevSheet();SP.askWeb=true;spAskControl();return;}
   SP.webState="loading";renderDevSheet();
   const boot=()=>{
     try{
@@ -2879,7 +2894,7 @@ function spWebStart(){
       pl.addListener("not_ready",()=>{SP.webState="";});
       const fail=m=>()=>{SP.webState="error";SP.webErr=m;renderDevSheet();toast(m);};
       pl.addListener("initialization_error",fail("This browser can't play Spotify. Use the Spotify app."));
-      pl.addListener("authentication_error",()=>{SP.webState="error";SP.webErr="Allow playback again";spAskControl();});
+      pl.addListener("authentication_error",()=>{SP.webState="error";SP.webErr="Allow playing in this browser";SP.askWeb=true;spAskControl();});
       pl.addListener("account_error",fail("Playing in the browser needs Spotify Premium."));
       pl.addListener("player_state_changed",st=>{if(!st||!st.track_window||!st.track_window.current_track)return;const t=st.track_window.current_track;
         SP.data.now=Object.assign({},SP.data.now||{},{t:spTrack(Object.assign({},t,{type:t.type||"track",external_urls:{spotify:"https://open.spotify.com/track/"+(t.id||"")}})),playing:!st.paused,prog:Number(st.position)||0,at:Date.now(),shuffle:!!st.shuffle,repeat:["off","context","track"][st.repeat_mode]||"off",dev:{id:SP.webDev,name:"This browser (dash-io)",type:"Computer",vol:SP.data.now&&SP.data.now.dev&&SP.data.now.dev.id===SP.webDev?SP.data.now.dev.vol:70,volOk:true}});
@@ -2960,7 +2975,7 @@ function renderMusic(){
   }
   const d=SP.data,n=d.now,t=n&&n.t;const last=(d.recent||[])[0];const show=t||last;
   const fresh=d.at?(Date.now()-d.at<120000?"":" · updated "+ago(new Date(d.at).toISOString())):"";
-  const ask=!spCanControl()?'<div class="note info"><span><b>Play music from dash-io.</b> Allow playback control once and you can play, pause, skip and pick songs here'+(webPlayable()?", or play right in this browser":"")+'. Spotify asks you to agree one more time. If Spotify shows an error, open your app on developer.spotify.com, press Edit, tick <b>Web Playback SDK</b>, save, and try again.</span><button class="btn small primary" type="button" data-act="sp-connect">Allow playback control</button></div>':"";
+  const ask=(!spCanControl()||SP.askWeb)?'<section class="allow-card"><div class="allow-ic">'+SPI.play+'</div><div style="min-width:0;flex:1"><b>'+(SP.askWeb&&spCanControl()?"Play music in this browser":"One more step to play music here")+'</b><p>'+(SP.askWeb&&spCanControl()?"Spotify needs your OK once to play sound in dash-io on this computer. You come straight back here after.":"Your Spotify sign-in only lets dash-io <i>see</i> your music. Tap the button, press <b>Agree</b> on Spotify, and you come straight back with play, pause, skip and song picking turned on.")+'</p></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn primary" type="button" data-act="sp-allow"'+(SP.askWeb?' data-web="1"':"")+'>'+(SP.askWeb&&spCanControl()?"Allow in this browser":"Allow playback control")+'</button>'+(SP.askWeb&&spCanControl()?'<button class="btn ghost" type="button" data-act="sp-allow-no">Not now</button>':"")+'</div></section>':"";
   const np=show?'<section class="np'+(n&&n.playing?" playing":"")+'"><div class="np-bg" style="background-image:url(\''+esc(show.img)+'\')"></div>'+(show.img?'<img class="np-art" src="'+esc(show.img)+'" alt="">':'<span class="np-art"></span>')+
     '<div style="min-width:0;display:flex;flex-direction:column"><div class="eyebrow" style="color:rgba(255,255,255,.75);display:flex;gap:8px;align-items:center">'+(t?eqHtml(n.playing)+(n.playing?"Now playing":"Paused"):"Last played "+esc(ago(last.at)))+esc(fresh)+'</div>'+
     '<div class="np-t">'+esc(show.name)+'</div><div class="np-a">'+esc(show.by)+(show.album?' · '+esc(show.album):"")+'</div>'+
@@ -2983,6 +2998,8 @@ function renderMusic(){
 }
 async function spAct(a,b){
   if(a==="sp-connect")spConnect().catch(()=>{SP.err="Couldn't start the Spotify sign-in.";renderMusic();});
+  else if(a==="sp-allow"){b.disabled=true;b.textContent="Opening Spotify…";spConnect(b.dataset.web==="1").catch(()=>{SP.err="Couldn't start the Spotify sign-in.";renderMusic();});}
+  else if(a==="sp-allow-no"){SP.askWeb=false;renderMusic();}
   else if(a==="sp-disconnect"){if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Press again to disconnect";setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Disconnect";}},3000);return;}spDisconnect();}
   else if(a==="sp-refresh"){toast("Refreshing…");spRefresh(true);}
   else if(a==="sp-more"){ui.spAll=!ui.spAll;renderMusic();}
