@@ -34,7 +34,7 @@ body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.FYD_PWA=true;</script>
+<script>window.FYD_PWA=true;window.DIO_PUSH="https://dash-io-push.dash-io-push.workers.dev";</script>
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -907,6 +907,10 @@ video.dv-img{background:#000}
 .nt-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;font-size:13px;padding:4px 0;align-items:baseline}
 .nt-row .mono{font-size:12px;color:var(--muted)}
 .nt-row span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.push-st{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;padding:10px 12px;border-radius:14px;background:var(--sunk);border:1px solid var(--line);line-height:1.4}
+.push-st.ok{border-color:color-mix(in srgb, var(--ok) 45%, transparent);background:color-mix(in srgb, var(--ok) 10%, transparent)}
+.push-st .beacon{--a:var(--ok);margin-top:4px}
+.push-st:not(.ok) .beacon{--a:var(--warn)}
 .chk{display:flex;gap:8px;align-items:center;font-size:13.5px;padding:4px 2px;cursor:pointer}
 .cal-conn{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--sunk);color:var(--ink);border-radius:999px;padding:4px 10px 4px 8px;font:inherit;font-size:12px;font-weight:600;letter-spacing:0;transition:border-color .2s,background .2s}
 .cal-conn:hover{border-color:var(--muted)}
@@ -1210,12 +1214,12 @@ function onWriteError(e){
   else toast("Could not save. Check your connection and try again.");
 }
 function save(c,id,data){
-  S[c]=Object.assign({},S[c],{[id]:data});render();if(typeof calQueue==="function")calQueue();
+  S[c]=Object.assign({},S[c],{[id]:data});render();if(typeof calQueue==="function"){calQueue();pushQueue();}
   if(mode==="db"){return enqueue(c+"/"+id,()=>db.collection(c).doc(id).set(data)).catch(onWriteError);}
   saveLocal();return Promise.resolve();
 }
 function remove(c,id){
-  const m=Object.assign({},S[c]);delete m[id];S[c]=m;render();if(typeof calQueue==="function")calQueue();
+  const m=Object.assign({},S[c]);delete m[id];S[c]=m;render();if(typeof calQueue==="function"){calQueue();pushQueue();}
   if(mode==="db"){return enqueue(c+"/"+id,()=>db.collection(c).doc(id).delete()).catch(onWriteError);}
   saveLocal();return Promise.resolve();
 }
@@ -1268,7 +1272,7 @@ function renderNotes(){
 function spFlash(){if(!SP.flash)return;const f=SP.flash;SP.flash="";setTimeout(()=>toast(f==="web"?"Done! Pick “This browser” in Play on to hear music here.":"Spotify connected · tap any song to play it",null,4500),900);if(f==="web"&&webPlayable())setTimeout(()=>spOpenDevices(""),1200);}
 let calStarted=false;
 function afterLoad(){
-  spFlash();updateBell();renderCalBtn();setTimeout(ntTick,1500);if(!calStarted){calStarted=true;calStartup();}
+  spFlash();updateBell();renderCalBtn();setTimeout(ntTick,1500);if(!calStarted){calStarted=true;calStartup();pushStartup();}
   navKey="";renderNavLinks();
   const h=location.hash.slice(1);if((VIEWS[h]||isCustom(h))&&hasPage(h)&&h!==view)setView(h);else if(!hasPage(view))setView("desk");
   bootDone();
@@ -3532,9 +3536,9 @@ const ntSupported=()=>PWA&&typeof window.Notification==="function";
 const ntPerm=()=>ntSupported()?Notification.permission:"unsupported";
 const ntSave=()=>{lsSet("dashio.notif",JSON.stringify(NT.cfg));lsSet("dashio.notif.sent",JSON.stringify(NT.sent));};
 const atMs=(d,t)=>{const [y,m,dd]=d.split("-").map(Number),[h,mi]=String(t||"00:00").split(":").map(Number);return new Date(y,m-1,dd,h||0,mi||0).getTime();};
-function ntPlan(){
+function ntPlan(days){
   const out=[],lead=Number(NT.cfg.lead)||10;
-  [TODAY,addDays(TODAY,1)].forEach(d=>{
+  Array.from({length:days||2},(_,i)=>addDays(TODAY,i)).forEach(d=>{
     const items=dayItems(d).filter(i=>i.coll!=="ext");
     items.filter(i=>i.time&&(i.coll==="events"||i.coll==="classes"||i.coll==="routines")).forEach(i=>{
       out.push({at:atMs(d,i.time)-lead*60000,win:10,key:"t:"+i.coll+":"+i.id+":"+d,title:i.title,body:(lead?"In "+lead+" min · ":"")+i.time+(i.end?"–"+i.end:"")+(i.extra?" · "+i.extra:""),url:i.coll==="classes"?"#timetable":"#desk"});
@@ -3552,8 +3556,8 @@ function ntPlan(){
   });
   return out.sort((a,b)=>a.at-b.at);
 }
-async function ntShow(r){
-  let shown=false;
+async function ntShow(r,inAppOnly){
+  let shown=!!inAppOnly;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.controller){const reg=await navigator.serviceWorker.ready;await reg.showNotification(r.title,{body:r.body,icon:"icons/icon-192.png",badge:"icons/favicon-32.png",tag:r.key,data:{url:r.url||"#desk"}});shown=true;}}catch(e){}
   if(!shown){try{const n=new Notification(r.title,{body:r.body,icon:"icons/icon-192.png",tag:r.key});n.onclick=()=>{window.focus();if(r.url)setView(r.url.slice(1));n.close();};}catch(e){}}
   if(!document.hidden)toast("🔔 "+r.title+(r.body?" · "+r.body:""),{label:"Open",fn:()=>{const v=(r.url||"#desk").slice(1);setView(v);}},6000);
@@ -3561,18 +3565,61 @@ async function ntShow(r){
 function ntTick(){
   if(!NT.cfg.on||ntPerm()!=="granted")return;
   const now=Date.now();let changed=false;
-  ntPlan().forEach(r=>{if(r.at<=now&&now-r.at<r.win*60000&&!NT.sent[r.key]){NT.sent[r.key]=now;changed=true;ntShow(r);}});
+  const viaPush=pushActive();
+  ntPlan().forEach(r=>{if(r.at<=now&&now-r.at<r.win*60000&&!NT.sent[r.key]){NT.sent[r.key]=now;changed=true;if(viaPush){if(!document.hidden)ntShow(r,true);}else ntShow(r);}});
   Object.keys(NT.sent).forEach(k=>{if(now-NT.sent[k]>3*864e5){delete NT.sent[k];changed=true;}});
   if(changed)ntSave();
 }
 setInterval(ntTick,30000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)ntTick();});
 if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",e=>{const d=e.data||{};if(d.go){setView(String(d.go).replace(/^#/,""));}});
+/* push: a small server sends reminders even when dash-io is closed */
+const PUSH_URL=()=>String(window.DIO_PUSH||"");
+const pushOk=()=>!!(PUSH_URL()&&ntSupported()&&navigator.serviceWorker&&"PushManager" in window);
+const PS=(()=>{let o={};try{o=JSON.parse(lsGet("dashio.push")||"{}")||{};}catch(e){}if(!o.device)o.device="d"+randStr(20).replace(/[^A-Za-z0-9]/g,"x");if(!o.secret)o.secret=randStr(40);return o;})();
+const pushSave=()=>lsSet("dashio.push",JSON.stringify(PS));pushSave();
+const pushActive=()=>!!(PS.on&&pushOk()&&ntPerm()==="granted"&&PS.okAt&&Date.now()-PS.okAt<7*864e5);
+const b64uBytes=s=>{s=String(s).replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));};
+async function pushPost(path,body){
+  const r=await fetch(PUSH_URL()+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({device:PS.device,secret:PS.secret},body||{}))});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw {code:j.error||"http_"+r.status};return j;
+}
+async function pushSubscribe(){
+  if(!pushOk()||ntPerm()!=="granted")return false;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const k=await (await fetch(PUSH_URL()+"/vapid")).json();
+    let sub=await reg.pushManager.getSubscription();
+    if(sub&&PS.key&&PS.key!==k.key){try{await sub.unsubscribe();}catch(e){}sub=null;}
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(k.key)});
+    await pushPost("/subscribe",{sub:sub.toJSON()});
+    PS.on=true;PS.key=k.key;PS.err="";pushSave();await pushSchedule();return true;
+  }catch(e){PS.err=e&&e.code==="forbidden"?"This device's push link was reset. Turn reminders off and on again.":"Couldn't reach the push service. Reminders still work while dash-io is open.";pushSave();renderNotifPop();return false;}
+}
+async function pushSchedule(){
+  if(!PS.on||!pushOk()||!navigator.onLine)return;
+  const list=NT.cfg.on?ntPlan(7).filter(r=>r.at>Date.now()-60000).slice(0,300).map(r=>({at:r.at,key:r.key,title:r.title,body:r.body,url:r.url})):[];
+  try{await pushPost("/schedule",{reminders:list});PS.okAt=Date.now();PS.count=list.length;PS.err="";pushSave();}
+  catch(e){if(e&&(e.code==="not_subscribed"||e.code==="forbidden")){PS.on=false;pushSave();pushSubscribe();}else{PS.err="Couldn't update the push service. Trying again later.";pushSave();}}
+}
+async function pushOff(){
+  if(!PS.on)return;PS.on=false;pushSave();
+  try{await pushPost("/unsubscribe");}catch(e){}
+  try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe();}catch(e){}
+}
+let pushQT=0;
+function pushQueue(){if(!PS.on)return;clearTimeout(pushQT);pushQT=setTimeout(pushSchedule,4000);}
+function pushStartup(){
+  if(!pushOk())return;
+  if(NT.cfg.on&&ntPerm()==="granted"){if(PS.on)pushSchedule();else pushSubscribe();}
+  setInterval(()=>{if(!document.hidden&&PS.on&&Date.now()-(PS.okAt||0)>6*3600e3)pushSchedule();},60000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&PS.on&&Date.now()-(PS.okAt||0)>30*60000)pushSchedule();});
+}
 async function ntEnable(){
   if(!ntSupported()){renderNotifPop();return;}
   let p=Notification.permission;
   if(p==="default"){try{p=await Notification.requestPermission();}catch(e){p=Notification.permission;}}
   NT.cfg.on=p==="granted";ntSave();renderNotifPop();
-  if(p==="granted"){toast("Reminders are on");setTimeout(ntTick,500);}
+  if(p==="granted"){toast("Reminders are on");setTimeout(ntTick,500);if(pushOk())pushSubscribe().then(ok=>{renderNotifPop();updateBell();if(ok)toast("Reminders will arrive even when dash-io is closed");});}
   else toast(p==="denied"?"Notifications are blocked. Allow them for dash-io in your device settings.":"Notifications weren't allowed.");
 }
 const BELL='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8" fill="none"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" fill="none"/></svg>';
@@ -3590,9 +3637,10 @@ function renderNotifPop(){
     h+=seg("Morning summary","nt-digest",[["off","Off"],["07:00","7:00"],["08:00","8:00"],["09:00","9:00"]],NT.cfg.digest);
     h+='<label class="chk"><input type="checkbox" data-act="nt-dl"'+(NT.cfg.dl?" checked":"")+'> Remind me the evening before deadlines</label>';
     const up=ntPlan().filter(r=>r.at>Date.now()).slice(0,4);
+    if(pushOk()&&on)h+='<div class="push-st'+(pushActive()?" ok":"")+'"><span class="beacon'+(pushActive()?"":" still")+'"></span><span>'+(pushActive()?"<b>Push is on.</b> Reminders arrive even when dash-io is closed"+(PS.count!=null?" · "+PS.count+" in the next 7 days":"")+".":PS.err?esc(PS.err):"Connecting to the push service…")+'</span></div>';
     h+='<div class="sec-h">Coming up</div>'+(up.length?up.map(r=>{const d=new Date(r.at);return '<div class="nt-row"><span class="mono">'+(ymd(d)===TODAY?"":DOW[d.getDay()]+" ")+pad(d.getHours())+":"+pad(d.getMinutes())+'</span><span>'+esc(r.title)+'</span></div>';}).join(""):'<div class="muted" style="font-size:12.5px">Nothing scheduled for today or tomorrow.</div>');
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="button" data-act="nt-test"'+(on?"":" disabled")+'>Send a test</button><button class="btn small ghost" type="button" data-act="cal-open">Connect a calendar</button></div>';
-    h+='<div class="muted" style="font-size:11.5px">'+(IS_IOS?"iPhone shows dash-io reminders while the app is open or was just used. For reminders when it's closed, connect Google Calendar or Outlook and your phone's calendar reminds you.":"Reminders show while dash-io is open, even in the background. Connect Google Calendar or Outlook to also get them from your calendar app.")+'</div>';
+    h+=(pushOk()?"":'<div class="muted" style="font-size:11.5px">'+(IS_IOS?"iPhone shows dash-io reminders while the app is open or was just used. For reminders when it's closed, connect Google Calendar or Outlook and your phone's calendar reminds you.":"Reminders show while dash-io is open, even in the background. Connect Google Calendar or Outlook to also get them from your calendar app.")+'</div>');
   }
   el.innerHTML=h;
 }
@@ -3601,11 +3649,15 @@ function closeNotifPop(){const el=document.getElementById("npop");if(el)el.hidde
 function ntAct(a,b){
   if(a==="nt-open"){const el=document.getElementById("npop");if(el.hidden)openNotifPop();else closeNotifPop();}
   else if(a==="nt-close")closeNotifPop();
-  else if(a==="nt-toggle"){if(NT.cfg.on&&ntPerm()==="granted"){NT.cfg.on=false;ntSave();renderNotifPop();toast("Reminders are off");}else ntEnable();}
-  else if(a==="nt-lead"){NT.cfg.lead=Number(b.dataset.v);ntSave();renderNotifPop();calQueue();}
-  else if(a==="nt-digest"){NT.cfg.digest=b.dataset.v;ntSave();renderNotifPop();}
-  else if(a==="nt-dl"){NT.cfg.dl=!!b.checked;ntSave();renderNotifPop();}
-  else if(a==="nt-test")ntShow({key:"test-"+Date.now(),title:"dash-io reminder",body:"This is how your reminders will look.",url:"#desk"});
+  else if(a==="nt-toggle"){if(NT.cfg.on&&ntPerm()==="granted"){NT.cfg.on=false;ntSave();pushOff();renderNotifPop();toast("Reminders are off");}else ntEnable();}
+  else if(a==="nt-lead"){NT.cfg.lead=Number(b.dataset.v);ntSave();renderNotifPop();calQueue();pushQueue();}
+  else if(a==="nt-digest"){NT.cfg.digest=b.dataset.v;ntSave();renderNotifPop();pushQueue();}
+  else if(a==="nt-dl"){NT.cfg.dl=!!b.checked;ntSave();renderNotifPop();pushQueue();}
+  else if(a==="nt-test"){
+    if(pushActive()){b.disabled=true;b.textContent="Sending…";toast("Sending a push. Close or leave dash-io to see it arrive.",null,4000);
+      pushPost("/test").then(j=>{toast(j.ok?"Push sent ✓":"The push service couldn't deliver it (code "+j.status+").");}).catch(()=>toast("Couldn't reach the push service.")).finally(()=>{b.disabled=false;b.textContent="Send a test";});}
+    else ntShow({key:"test-"+Date.now(),title:"dash-io reminder",body:"This is how your reminders will look.",url:"#desk"});
+  }
   updateBell();
 }
 function updateBell(){const b=document.getElementById("bellBtn");if(b)b.classList.toggle("on",!!(NT.cfg.on&&ntPerm()==="granted"));}

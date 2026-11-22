@@ -1,5 +1,5 @@
-// dash-io offline worker, build 20261122174007
-const SHELL = "fyd-shell-20261122174007";
+// dash-io offline worker, build 20261122180113
+const SHELL = "fyd-shell-20261122180113";
 const RUNTIME = "fyd-runtime-v1";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/favicon-32-blink.png"];
 const LIBS = [
@@ -20,6 +20,11 @@ async function cacheLibs() {
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES)).then(() => cacheLibs()).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith("fyd-shell-") && k !== SHELL).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: "dash-io", body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "dash-io", { body: d.body || "", icon: "icons/icon-192.png", badge: "icons/favicon-32.png", tag: d.tag || undefined, renotify: !!d.tag, data: { url: d.url || "#desk" } }));
 });
 self.addEventListener("notificationclick", e => {
   e.notification.close();
