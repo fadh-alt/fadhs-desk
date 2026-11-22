@@ -1,5 +1,5 @@
-// dash-io offline worker, build 20261122183302
-const SHELL = "fyd-shell-20261122183302";
+// dash-io offline worker, build 20261122184525
+const SHELL = "fyd-shell-20261122184525";
 const RUNTIME = "fyd-runtime-v1";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/favicon-32-blink.png"];
 const LIBS = [
