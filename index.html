@@ -896,6 +896,17 @@ video.dv-img{background:#000}
 .rep-btns small{font-weight:400;opacity:.75;font-size:11.5px}
 @media (max-width:480px){.rep-btns{grid-template-columns:1fr}}
 @media (max-width:560px){.kpis,.kpis.n3{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kpis.n3>:first-child{grid-column:1 / -1}.kpi{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}.kpi .ringw{width:54px;height:54px}.kpi .ring-n{font-size:12.5px}.kv{font-size:17px}}
+/* AI on references */
+.ask{margin-top:6px;border:1px solid var(--line);background:var(--sunk);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;animation:rise .35s cubic-bezier(.2,.7,.2,1) both}
+.ask-h{display:flex;align-items:center;justify-content:space-between}
+.ask-log{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding-right:2px}
+.qa-q{align-self:flex-end;max-width:85%;background:var(--accent);color:var(--accent-ink);padding:8px 12px;border-radius:16px 16px 4px 16px;font-size:13.5px;overflow-wrap:anywhere}
+.qa-a{align-self:flex-start;max-width:95%;background:var(--surface);border:1px solid var(--line);padding:10px 12px;border-radius:16px 16px 16px 4px;font-size:13.5px;line-height:1.55;overflow-wrap:anywhere;animation:rise .3s both}
+.qa-a.err{color:var(--danger)}
+.ask-in{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.ask-sug{cursor:pointer;background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:5px 11px}
+.ask-sug:hover{border-color:var(--muted)}
+.btn.on{border-color:var(--ink)}
 /* account + sync */
 .sync-btn{position:relative}
 .sync-btn .sync-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 2px var(--bg);transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1),background .3s}
@@ -1164,6 +1175,8 @@ video.dv-img{background:#000}
 <div class="pdfv" id="pdfv" hidden role="dialog" aria-label="PDF viewer"></div>
 <input type="file" id="importIn" accept="application/json,.json" hidden>
 <input type="file" id="docIn" multiple hidden>
+<input type="file" id="planIn" accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,application/pdf" multiple hidden>
+<input type="file" id="refAttachIn" accept="application/pdf,.pdf" hidden>
 <dialog id="repDlg"><div style="padding:20px;display:flex;flex-direction:column;gap:14px" id="repBody"></div></dialog>
 <dialog id="pagesDlg"><div style="padding:20px;display:flex;flex-direction:column;gap:12px" id="pagesBody"></div></dialog>
 
@@ -1783,6 +1796,8 @@ document.addEventListener("click",e=>{
   if(a&&a.indexOf("sp-")===0){spAct(a,b);return;}
   if(a&&a.indexOf("pdfv-")===0){pdfvAct(a,b);return;}
   if(a==="pdf-open"){openPdf(b.dataset.id);return;}
+  if(["ref-attach","ref-getpdf","ref-ask-open","ref-ask-close","ref-ask","ref-ask-sug"].includes(a)){refAct(a,b);return;}
+  if(a&&a.indexOf("plan-")===0){planAct(a,b);return;}
   if(a&&a.indexOf("pg-")===0){pgAct(a,b);return;}
   if(a&&a.indexOf("rep-")===0){repAct(a,b);return;}
   if(a==="page-edit"){if(readOnly){toast("You can view this desk but not change it.");return;}openPages(b.dataset.id);return;}
@@ -1826,7 +1841,7 @@ document.addEventListener("click",e=>{
   else if(a==="flow-pick"){const k=b.dataset.k,id=b.dataset.id,i=(ui.refList[k]||[]).indexOf(id);
     if(ui.refSel[k]!==id&&i>=0){ui.refTouch[k]=id;flowTo(k,i);markTouch(k);}
     else if(ui.refTouch[k]!==id){ui.refTouch[k]=id;markTouch(k);}
-    else{const r=S.refs[id];if(r&&hasPdf(Object.assign({id},r))){ui.refTouch[k]=null;markTouch(k);openPdf(id);}else{const d=document.getElementById(k+"Detail");if(d&&d.scrollIntoView)d.scrollIntoView({behavior:"smooth",block:"nearest"});}}}
+    else{const r=S.refs[id];ui.refTouch[k]=null;markTouch(k);if(r&&hasPdf(Object.assign({id},r)))openPdf(id);else if(r&&safeLink(r.link)&&canFetchPdf())fetchRefPdf(id,true);else if(r&&!readOnly){ui.attachFor=id;toast("No PDF saved for this article yet. Choose the PDF to attach it.",null,3500);document.getElementById("refAttachIn").click();}}}
   else if(a==="flow-dot"){const k=b.dataset.k,i=Number(b.dataset.i),id=(ui.refList[k]||[])[i];if(id&&id!==ui.refSel[k])flowTo(k,i);}
   else if(a==="lb-toggle"){lb.open=!lb.open;if(lb.status==="error")lb.status="idle";renderLbPanel();}
   else if(a==="lb-pick"){if(readOnly){toast("You can view this desk but not change it.");return;}const i=document.getElementById("lbIn");if(i)i.click();}
@@ -1947,21 +1962,6 @@ function renderProjTasks(k){
   el.innerHTML=open.length?'<div class="group">'+open.slice(0,8).map(taskRow).join("")+'</div>'+(open.length>8?'<div class="empty">'+(open.length-8)+' more on the Desk page.</div>':""):'<div class="empty">No open '+AREAS[k]+' tasks.</div>';
 }
 
-async function summarizeRef(id){
-  const r=S.refs[id];if(!r||!sampleFn||ui.refBusy[id])return;
-  if(readOnly){toast("You can view this desk but not change it.");return;}
-  const k=r.project==="idp"?"idp":"fyp";ui.refBusy[id]=true;renderRefs(k);
-  try{
-    const {text}=await sampleFn("Write a brief summary of this source for a final-year engineering student's literature review. Two or three plain sentences: what was studied, how, and the key finding. No preamble, no bullet points.\n\nTitle: "+r.title+"\nAuthors: "+(r.authors||"")+"\nYear: "+(Number(r.year)>0?r.year:"")+"\n\nAbstract or notes:\n"+String(r.abstract).slice(0,6000),{modelTier:"quick"});
-    const n=Object.assign({},S.refs[id]||r,{summary:String(text).trim()});delete n.example;
-    delete ui.refBusy[id];await save("refs",id,n);toast("Summary added");
-  }catch(e){
-    delete ui.refBusy[id];
-    const c=e&&e.code;
-    toast(c==="not_granted"||c==="sampling_disabled"?"Claude isn't allowed to summarize for this dashboard.":c==="rate_limited"?"Too many requests right now. Try again in a minute.":"Couldn't summarize right now. Try again later.");
-  }
-  renderRefs(k);
-}
 
 function renderNav(){
   const f=document.getElementById("navFyp"),i=document.getElementById("navIdp");
@@ -2013,7 +2013,7 @@ function buildProjectPages(){
         '<section class="card a-fyp"><div class="card-head"><h2>Sources by year</h2></div><div id="fypSide"></div></section></div></div>';
     } else {
       grid='<div class="pgrid"><div class="col">'+
-        '<section class="card a-idp"><div class="card-head"><div><h2>Workload ahead</h2><div class="muted" style="font-size:12.5px" id="idpChartSub"></div></div></div><div class="chart" id="idpChart"></div></section>'+
+        '<section class="card a-idp"><div class="card-head"><div><h2>Workload ahead</h2><div class="muted" style="font-size:12.5px" id="idpChartSub"></div></div><div class="actions"><button class="btn small" data-act="new" data-kind="task" data-area="idp" type="button">+ Task</button><button class="btn small" data-act="new" data-kind="milestone" data-project="idp" type="button">+ Milestone</button><button class="btn small" data-act="new" data-kind="event" data-area="idp" type="button">+ Meeting</button><button class="btn small primary" data-act="plan-open" data-k="idp" type="button">Import plan</button></div></div><div id="idpPlanPanel"></div><div class="chart" id="idpChart"></div></section>'+
         '<section class="card a-idp"><div class="card-head"><h2>Team</h2><button class="btn small ghost" data-act="edit-project" data-id="idp" type="button">Edit team</button></div><div id="idpSide"></div></section>'+
         '<div id="idpFilesWrap"></div></div><div class="col">'+
         '<section class="card a-idp"><div class="card-head"><h2>Milestones</h2><button class="btn small" data-act="new" data-kind="milestone" data-project="idp" type="button">+ Milestone</button></div><div class="tl" id="idpTl"></div></section>'+
@@ -2317,21 +2317,6 @@ function flowGo(k,target,instant){
 }
 function stepFlow(k,d){if(!(ui.refList[k]||[]).length)return;flowGo(k,Math.round(flowCur(k))+d);}
 function flowTo(k,i){const g=flowGeom(k),cur=flowCur(k);flowGo(k,Math.round(cur)+Math.round(wrapD(i-Math.round(cur),g.n,g.loop)));}
-function renderDetail(k,animate){
-  const el=document.getElementById(k+"Detail");if(!el)return;
-  const r=S.refs[ui.refSel[k]];if(!r){el.innerHTML="";return;}
-  ensureLocalPdf(Object.assign({id:ui.refSel[k]},r));
-  const id=ui.refSel[k],ids=ui.refList[k]||[],st=RSTAT[r.status]?r.status:"to-read",busy=!!ui.refBusy[id];
-  const link=safeLink(r.link),pdf=pdfHref(r),yr=Number(r.year)>0?String(r.year):"";
-  const by=[r.authors,yr,r.source].filter(Boolean).map(esc).join(" · "),canSum=!!(r.abstract&&sampleFn);
-  el.innerHTML='<div class="fd-top"><button type="button" class="pill pill-btn '+RSTAT[st][1]+'" data-act="ref-cycle" data-id="'+esc(id)+'" title="Change reading status">'+RSTAT[st][0]+'</button>'+(r.chapter?'<span class="tag">'+esc(r.chapter)+'</span>':"")+'<span class="mono muted" style="margin-left:auto;font-size:12px">'+(ids.indexOf(id)+1)+" of "+ids.length+'</span></div>'+
-    '<h3 class="fd-title">'+esc(r.title)+'</h3>'+(by?'<div class="muted" style="font-size:12.5px;overflow-wrap:anywhere">'+by+'</div>':"")+
-    (r.summary?'<p class="fd-sum">'+esc(r.summary)+'</p>':'<p class="fd-sum muted">No summary yet.'+(canSum?" Press Summarize to have Claude write one.":" Add two or three sentences with Edit.")+'</p>')+
-    '<div class="foot">'+(hasPdf(Object.assign({id},r))?'<button class="btn small primary" type="button" data-act="pdf-open" data-id="'+esc(id)+'">Open PDF</button>':(link?'<a class="btn small" href="'+esc(link)+'" target="_blank" rel="noopener">Open source ↗</a>':""))+
-    (canSum?'<button class="btn small" type="button" data-act="ref-sum" data-id="'+esc(id)+'"'+(busy?" disabled":"")+'>'+(busy?'<span class="reading"><i></i><i></i><i></i></span> Summarizing':(r.summary?"✦ Re-summarize":"✦ Summarize"))+'</button>':"")+
-    '<button class="btn small ghost" type="button" data-act="edit" data-kind="ref" data-id="'+esc(id)+'">Edit</button></div>';
-  if(animate){el.classList.remove("swap");void el.offsetWidth;el.classList.add("swap");}
-}
 function renderRefGrid(k,list,tot){
   const el=document.getElementById(k+"Refs");
   if(!list.length){el.innerHTML='<div class="empty" style="grid-column:1 / -1">'+(tot?"No articles match.":"No articles yet. Upload PDFs or add one by hand.")+'</div>';return;}
@@ -2341,7 +2326,7 @@ function renderRefGrid(k,list,tot){
     const by=[r.authors,yr,r.source].filter(Boolean).map(esc).join(" · "),long=String(r.summary||"").length>170;
     return '<article class="ref'+(open?" open":"")+(ui.refTouchList===r.id?" touched":"")+'" style="--i:'+i+'" data-act="ref-touch" data-id="'+esc(r.id)+'"><button type="button" class="rdel" data-act="ref-del" data-id="'+esc(r.id)+'" aria-label="Delete this article" title="Delete">'+X_SVG+'</button><div class="ref-top"><button type="button" class="pill pill-btn '+RSTAT[st][1]+'" data-act="ref-cycle" data-id="'+esc(r.id)+'">'+RSTAT[st][0]+'</button>'+(r.chapter?'<span class="tag">'+esc(r.chapter)+'</span>':"")+'<button class="icon-btn" type="button" data-act="edit" data-kind="ref" data-id="'+esc(r.id)+'" aria-label="Edit reference">✎</button></div>'+
       '<h4>'+esc(r.title)+'</h4>'+(by?'<div class="by">'+by+'</div>':"")+(r.summary?'<p class="sum">'+esc(r.summary)+'</p>':'<p class="sum muted">No summary yet.</p>')+
-      '<div class="foot">'+(long?'<button class="btn small ghost" type="button" data-act="ref-more" data-id="'+esc(r.id)+'">'+(open?"Show less":"Read more")+'</button>':"")+(hasPdf(r)?'<button class="btn small primary" type="button" data-act="pdf-open" data-id="'+esc(r.id)+'">Open PDF</button>':(link?'<a href="'+esc(link)+'" target="_blank" rel="noopener">Source ↗</a>':""))+'</div></article>';
+      '<div class="foot">'+(long?'<button class="btn small ghost" type="button" data-act="ref-more" data-id="'+esc(r.id)+'">'+(open?"Show less":"Read more")+'</button>':"")+(hasPdf(r)?'<button class="btn small primary" type="button" data-act="pdf-open" data-id="'+esc(r.id)+'">Open PDF</button>':(link&&canFetchPdf()?'<button class="btn small primary" type="button" data-act="ref-getpdf" data-id="'+esc(r.id)+'">Get PDF</button>':'<button class="btn small" type="button" data-act="ref-attach" data-id="'+esc(r.id)+'">Attach PDF</button>'))+'<button class="btn small" type="button" data-act="ref-ask-open" data-id="'+esc(r.id)+'">✦ Ask AI</button></div></article>';
   }).join("");
 }
 function renderUpl(k){
@@ -2386,7 +2371,7 @@ async function ingestRefs(k,files){
       if(assetsNs){job.step="Saving the PDF";renderUpl(k);try{const a=await assetsNs.upload(f);pdfId=a&&a.id||"";pdfUrl=a&&a.url||"";}catch(e){}}
       else if(PWA){job.step="Saving the PDF";renderUpl(k);try{await idb.put("pdf",id,f);localPdf=true;}catch(e){}}
       let info={};
-      if(sampleFn&&text.trim()){job.step="Claude is reading it";renderUpl(k);try{const v=await sampleFn.json(REF_PROMPT+text.slice(0,14000),{modelTier:"quick"});if(v&&typeof v==="object"&&!Array.isArray(v))info=v;}catch(e){info={};}}
+      if(aiCan()&&text.trim()){job.step=aiWho()+" is reading it";renderUpl(k);try{const v=await aiJson(REF_PROMPT+text.slice(0,14000),{max:600});if(v&&typeof v==="object"&&!Array.isArray(v))info=v;}catch(e){info={};}}
       const str=v=>typeof v==="string"?v.trim():"";
       const doi=str(info.doi).replace(/^https?:\/\/(dx\.)?doi\.org\//i,"");const y=parseInt(info.year,10);
       const ref={title:(str(info.title)||str(meta.Title)||String(f.name||"Untitled").replace(/\.pdf$/i,"")).slice(0,300),authors:(str(info.authors)||str(meta.Author)).slice(0,300),
@@ -2395,7 +2380,7 @@ async function ingestRefs(k,files){
       await save("refs",id,ref);
       ui.refSel[k]=id;renderRefs(k);
       job.done=true;
-      job.step=!text.trim()?"Added, but no text could be read (scanned PDF?)":!sampleFn?"Added. Write the summary with Edit (Claude summaries work in the claude.ai version).":(pdfId||localPdf)?"Added":"Added (the PDF file itself isn't stored in this view)";
+      job.step=!text.trim()?"Added, but no text could be read (scanned PDF?)":!aiCan()?"Added. Sign in with the ☁ button to get AI summaries.":(pdfId||localPdf)?"Added":"Added (the PDF file itself isn't stored in this view)";
     }catch(e){job.err=(e&&e.message)||"Couldn't read this PDF.";}
     renderUpl(k);
     setTimeout(()=>{ui.upl[k]=ui.upl[k].filter(j=>j!==job);renderUpl(k);},job.err?9000:4000);
@@ -2420,7 +2405,7 @@ function normalizeWeeks(data){
 }
 async function ingestLogbook(files){
   if(readOnly){toast("You can view this desk but not change it.");return;}
-  if(!sampleFn){lb.status="error";lb.msg=sampleReady?"Reading the logbook needs Claude, which isn't available in this view. Open the dashboard on claude.ai.":"Still getting ready. Try again in a few seconds.";renderLbPanel();return;}
+  if(!aiCan()){lb.status="error";lb.msg=PWA?"Sign in with the ☁ button to let dash-io AI read your logbook.":sampleReady?"Reading the logbook needs Claude, which isn't available in this view.":"Still getting ready. Try again in a few seconds.";renderLbPanel();return;}
   const ctl=new AbortController();lb.ctl=ctl;lb.status="reading";lb.msg="";lb.rows=[];lb.names=files.map(f=>f.name||"file").join(", ");renderLbPanel();
   try{
     let text="";const imgs=[];
@@ -2433,16 +2418,16 @@ async function ingestLogbook(files){
     }
     if(lb.ctl!==ctl)return;
     if(!text.trim()&&!imgs.length)throw {code:"no_text"};
-    if(imgs.length&&!canImg)throw {code:"images_unavailable"};
+    if(imgs.length&&(!sampleFn||!canImg))throw {code:sampleFn?"images_unavailable":"photos_app"};
     const opts={signal:ctl.signal};if(imgs.length)opts.images=imgs.slice(0,imgMax||5);
-    const data=await sampleFn.json(LB_PROMPT+(text.trim()?"\n\nLogbook text:\n"+text.replace(/[ \t]+/g," ").slice(0,150000):"\n\nThe logbook pages are in the images."),opts);
+    const data=sampleFn?await sampleFn.json(LB_PROMPT+(text.trim()?"\n\nLogbook text:\n"+text.replace(/[ \t]+/g," ").slice(0,150000):"\n\nThe logbook pages are in the images."),opts):await aiJson(LB_PROMPT+"\n\nLogbook text:\n"+text.replace(/[ \t]+/g," ").slice(0,45000),{max:3000});
     if(lb.ctl!==ctl)return;
     const rows=normalizeWeeks(data);
     if(rows.length){lb.rows=rows;lb.status="done";}else{lb.status="error";lb.msg="No weekly entries were found. Check that this is your logbook, or try photos of the pages.";}
   }catch(e){
     if(lb.ctl!==ctl)return;const c=e&&e.code;
     if(c==="cancelled")lb.status="idle";
-    else{lb.status="error";lb.msg=c==="no_text"?"No text could be read. If the PDF is scanned, upload photos or screenshots of the pages instead.":c==="bad_type"?"Use a PDF, a Word file (.docx) or photos of the pages.":(IMP_ERR[c]||(e&&e.message)||"Something went wrong while reading the logbook. Try again.");}
+    else{lb.status="error";lb.msg=c==="no_text"?"No text could be read. If the PDF is scanned, upload photos or screenshots of the pages instead.":c==="bad_type"?"Use a PDF, a Word file (.docx) or photos of the pages.":c==="photos_app"?"Photos of pages can be read in the claude.ai version. Here, upload the logbook as a PDF or Word file.":c&&/^(need_account|ai_daily|ai_quota|too_long|invalid_json)$/.test(c)?aiErr(c):(IMP_ERR[c]||(e&&e.message)||"Something went wrong while reading the logbook. Try again.");}
   }
   lb.ctl=null;renderLbPanel();
 }
@@ -4146,6 +4131,224 @@ async function accHandleGoogle(h,o){
   try{const j=await api("POST","/auth/google",{idToken,nonce,device:(IS_IOS?"iPhone":navigator.platform||"device").slice(0,40)});ACC.pendingSignIn=j;}
   catch(e){ACC.flashErr=ACC_ERR[e&&e.code]||"Google sign-in didn't finish. Try again.";}
 }
+/* ---------- AI: Claude on claude.ai, dash-io's own AI in the installed app ---------- */
+const aiCan=()=>!!sampleFn||(typeof syncOn==="function"&&syncOn());
+const aiWho=()=>sampleFn?"Claude":"dash-io AI";
+async function aiAsk(system,messages,opts){
+  opts=opts||{};
+  if(sampleFn){
+    const conv=messages.map(m=>({role:m.role,content:m.content}));
+    if(system)conv[0]={role:"user",content:system+"\n\n"+conv[0].content};
+    const {text}=await sampleFn(conv,{modelTier:opts.tier||"quick",cache:false});return String(text||"").trim();
+  }
+  if(!(typeof syncOn==="function"&&syncOn()))throw {code:"need_account"};
+  const j=await api("POST","/ai/chat",{system,messages,max:opts.max||700});ACC.aiLeft=j.left;return String(j.text||"");
+}
+async function aiJson(prompt,opts){
+  opts=opts||{};
+  if(sampleFn&&sampleFn.json&&!opts.images){try{return await sampleFn.json(prompt,{modelTier:"quick"});}catch(e){if(e&&e.code&&e.code!=="invalid_json")throw e;}}
+  if(sampleFn&&opts.images)return sampleFn.json(prompt,{images:opts.images});
+  const t=await aiAsk("Reply with only valid JSON. No explanation and no code fences.",[{role:"user",content:prompt}],{max:opts.max||1500});
+  const m=t.match(/[\[{][\s\S]*[\]}]/);if(!m)throw {code:"invalid_json"};
+  try{return JSON.parse(m[0]);}catch(e){throw {code:"invalid_json"};}
+}
+function aiErr(c){
+  return c==="need_account"?"Sign in with the ☁ button to use AI in the app.":c==="ai_daily"?"You've used today's 40 AI requests. More tomorrow.":c==="ai_quota"?"dash-io's free AI allowance is used up for today. Try again tomorrow.":
+    c==="too_long"?"That's too long for the AI. Try a shorter question.":c==="not_granted"||c==="sampling_disabled"?"Claude isn't allowed to answer for this dashboard.":c==="rate_limited"?"Too many requests right now. Try again in a minute.":
+    c==="invalid_json"?"The AI's answer couldn't be read. Try again.":"The AI couldn't answer right now. Try again.";
+}
+function fmtAi(t){
+  return esc(String(t||"")).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/^\s*[-*•]\s+/gm,"• ").replace(/^#{1,4}\s*/gm,"").replace(/\n{2,}/g,"<br><br>").replace(/\n/g,"<br>");
+}
+
+/* ---------- references: the PDF itself, summaries and questions ---------- */
+ui.ptext={};ui.chat={};ui.askOpen={};
+async function refBlob(id){
+  const r=S.refs[id];if(!r)return null;
+  try{
+    if(PWA){let b=r.localPdf?await idb.get("pdf",id).catch(()=>null):null;if(!b&&r.cloud)b=await cloudBlob("ref",id,"pdf",id);return b||null;}
+    const u=pdfHref(r);if(u){const res=await fetch(u);if(res.ok)return await res.blob();}
+  }catch(e){}
+  return null;
+}
+async function paperText(id){
+  if(ui.ptext[id])return ui.ptext[id];
+  const r=S.refs[id];if(!r)return "";let t="";
+  if(PWA){try{t=await idb.get("kv","txt-"+id)||"";}catch(e){}}
+  if(!t){const b=await refBlob(id);if(b){try{t=(await pdfRead(b,14,false)).text.replace(/\s+/g," ").trim();}catch(e){t="";}if(t&&PWA)idb.put("kv","txt-"+id,t).catch(()=>{});}}
+  if(!t)t=[r.abstract,r.summary].filter(Boolean).join("\n");
+  ui.ptext[id]=String(t).slice(0,40000);return ui.ptext[id];
+}
+const refKey=id=>{const r=S.refs[id];return r&&r.project==="idp"?"idp":"fyp";};
+async function summarizeRef(id){
+  const r=S.refs[id];if(!r||ui.refBusy[id])return;
+  if(readOnly){toast("You can view this desk but not change it.");return;}
+  if(!aiCan()){toast(aiErr("need_account"));if(typeof openAuthDlg==="function"&&PWA)openAuthDlg("signin");return;}
+  const k=refKey(id);ui.refBusy[id]="sum";renderRefs(k);
+  try{
+    const text=await paperText(id);if(!text)throw {code:"no_text"};
+    const out=await aiAsk("You write short literature-review summaries for a university student.",[{role:"user",content:"Summarize this paper in 2 or 3 plain sentences: what was studied, how, and the key finding. No preamble and no bullet points.\n\nTitle: "+r.title+"\n\nPaper text:\n"+text.slice(0,24000)}],{max:320});
+    if(!out)throw {code:"empty"};
+    const n=Object.assign({},S.refs[id]||r,{summary:out.slice(0,1500)});delete n.example;delete ui.refBusy[id];save("refs",id,n);toast("Summary updated");
+  }catch(e){delete ui.refBusy[id];toast(e&&e.code==="no_text"?"There's no text to summarize yet. Attach the PDF first.":aiErr(e&&e.code));}
+  renderRefs(k);
+}
+async function askRef(id,q){
+  q=String(q||"").trim();if(!q||ui.refBusy[id])return;
+  if(!aiCan()){toast(aiErr("need_account"));if(typeof openAuthDlg==="function"&&PWA)openAuthDlg("signin");return;}
+  const r=S.refs[id];if(!r)return;const k=refKey(id);
+  const log=ui.chat[id]=ui.chat[id]||[];log.push({q,a:null});ui.refBusy[id]="ask";const inp0=document.getElementById("askIn-"+k);if(inp0)inp0.value="";ui.askOpen[id]=true;renderDetail(k);
+  try{
+    const text=await paperText(id);
+    const ctx="Paper: "+r.title+(r.authors?" by "+r.authors:"")+(Number(r.year)>0?" ("+r.year+")":"")+"\n\nPaper text:\n"+(text?text.slice(0,24000):"(No text is available, only the title. Say so if the question needs the paper.)");
+    const recent=log.slice(-6),msgs=[];
+    recent.forEach((m,i)=>{msgs.push({role:"user",content:(i===0?ctx+"\n\nQuestion: ":"")+m.q});if(m.a)msgs.push({role:"assistant",content:m.a});});
+    const a=await aiAsk("You help a university student understand one academic paper. Answer from the paper text you are given. If the paper doesn't say, say so briefly. Be clear and concise: a short paragraph or a few bullet points.",msgs,{max:700});
+    log[log.length-1].a=a||"(No answer.)";
+  }catch(e){log[log.length-1].a="";log[log.length-1].err=aiErr(e&&e.code);}
+  delete ui.refBusy[id];renderDetail(k);
+  const inp=document.getElementById("askIn-"+k);if(inp&&window.matchMedia&&matchMedia("(hover: hover)").matches)inp.focus();
+}
+/* getting the PDF: attach a file, or fetch it from the article's link */
+ui.attachFor=null;
+async function attachPdf(id,file){
+  const r=S.refs[id];if(!r||!file)return;const k=refKey(id);
+  if(!(file.type==="application/pdf"||/\.pdf$/i.test(file.name||""))){toast("Choose a PDF file.");return;}
+  ui.refBusy[id]="pdf";renderRefs(k);
+  try{
+    const n=Object.assign({},S.refs[id]);
+    let cover="";try{const p=await pdfRead(file,1,!n.cover);cover=p.cover;}catch(e){}
+    if(PWA){await idb.put("pdf",id,file);n.localPdf=true;n.cloud=false;}
+    else if(assetsNs){const a=await assetsNs.upload(file);n.pdfId=a&&a.id||"";n.pdfUrl=a&&a.url||"";}
+    else throw new Error("store");
+    if(cover&&!n.cover&&cover.length<180000)n.cover=cover;
+    n.fileName=file.name||n.fileName||"";delete ui.ptext[id];if(PWA)idb.del("kv","txt-"+id).catch(()=>{});
+    delete ui.refBusy[id];save("refs",id,n);toast("PDF attached");if(typeof syncFiles==="function")setTimeout(syncFiles,1500);
+  }catch(e){delete ui.refBusy[id];toast("Couldn't save the PDF here.");renderRefs(k);}
+}
+const canFetchPdf=()=>PWA&&typeof syncOn==="function"&&syncOn();
+async function fetchRefPdf(id,openAfter){
+  const r=S.refs[id];if(!r)return;const k=refKey(id),link=safeLink(r.link);
+  if(!link){ui.attachFor=id;document.getElementById("refAttachIn").click();return;}
+  if(!canFetchPdf()){toast(PWA?"Sign in with the ☁ button to fetch PDFs from links, or attach the PDF.":"Attach the PDF to keep it here.");return;}
+  ui.refBusy[id]="pdf";renderRefs(k);toast("Getting the PDF from the article's page…",null,3000);
+  try{
+    const res=await fetch(API()+"/fetch/pdf",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+ACC.tok},body:JSON.stringify({url:link})});
+    if(!res.ok){const j=await res.json().catch(()=>({}));throw {code:j.error||"no_pdf"};}
+    const blob=await res.blob();
+    const f=new File([blob],(r.title||"article").slice(0,60).replace(/[\\/:*?"<>|]/g," ")+".pdf",{type:"application/pdf"});
+    delete ui.refBusy[id];await attachPdf(id,f);if(openAfter)openPdf(id);
+  }catch(e){
+    delete ui.refBusy[id];renderRefs(k);
+    toast(e&&e.code==="too_large"?"That PDF is over 20 MB. Download it yourself and attach it.":"The PDF isn't freely available from that link (it may need a login or subscription). Download it yourself, then tap Attach PDF.",null,6000);
+  }
+}
+function renderAsk(k,id){
+  const log=ui.chat[id]||[],busy=ui.refBusy[id]==="ask";
+  const sug=["What's the key finding?","What methods did they use?","What are the limitations?","How could I use this in my project?"];
+  return '<div class="ask"><div class="ask-h"><b>✦ Ask about this paper</b><button class="icon-btn" type="button" data-act="ref-ask-close" data-id="'+esc(id)+'" aria-label="Close">✕</button></div>'+
+    (log.length?'<div class="ask-log">'+log.map(m=>'<div class="qa-q">'+esc(m.q)+'</div>'+(m.a===null?'<div class="qa-a"><span class="reading"><i></i><i></i><i></i></span></div>':m.err?'<div class="qa-a err">'+esc(m.err)+'</div>':'<div class="qa-a">'+fmtAi(m.a)+'</div>')).join("")+'</div>':'<div class="chips">'+sug.map(s=>'<button type="button" class="chip ask-sug" data-act="ref-ask-sug" data-id="'+esc(id)+'">'+esc(s)+'</button>').join("")+'</div>')+
+    '<div class="ask-in"><input class="field" id="askIn-'+k+'" placeholder="Ask anything about this paper" autocomplete="off" maxlength="500"'+(busy?" disabled":"")+'><button class="btn primary" type="button" data-act="ref-ask" data-id="'+esc(id)+'"'+(busy?" disabled":"")+'>Ask</button></div>'+
+    '<div class="muted" style="font-size:11px">Answers come from '+aiWho()+(ACC&&ACC.aiLeft!=null&&!sampleFn?" · "+ACC.aiLeft+" left today":"")+'. AI can be wrong, so check the paper before you cite it.</div></div>';
+}
+function renderDetail(k,animate){
+  const el=document.getElementById(k+"Detail");if(!el)return;
+  const id=ui.refSel[k],r=S.refs[id];if(!r){el.innerHTML="";return;}
+  const keepIn=document.getElementById("askIn-"+k),draft=keepIn?keepIn.value:"";
+  const ids=ui.refList[k]||[],st=RSTAT[r.status]?r.status:"to-read",busy=ui.refBusy[id];
+  const link=safeLink(r.link),yr=Number(r.year)>0?String(r.year):"",has=hasPdf(Object.assign({id},r));
+  const by=[r.authors,yr,r.source].filter(Boolean).map(esc).join(" · ");
+  let pdfBtns="";
+  if(has)pdfBtns='<button class="btn small primary" type="button" data-act="pdf-open" data-id="'+esc(id)+'">Open PDF</button>';
+  else if(busy==="pdf")pdfBtns='<button class="btn small primary" type="button" disabled><span class="reading"><i></i><i></i><i></i></span> Getting PDF</button>';
+  else pdfBtns=(link&&canFetchPdf()?'<button class="btn small primary" type="button" data-act="ref-getpdf" data-id="'+esc(id)+'">Get PDF</button>':"")+'<button class="btn small'+(link&&canFetchPdf()?"":" primary")+'" type="button" data-act="ref-attach" data-id="'+esc(id)+'">Attach PDF</button>';
+  el.innerHTML='<div class="fd-top"><button type="button" class="pill pill-btn '+RSTAT[st][1]+'" data-act="ref-cycle" data-id="'+esc(id)+'" title="Change reading status">'+RSTAT[st][0]+'</button>'+(r.chapter?'<span class="tag">'+esc(r.chapter)+'</span>':"")+'<span class="mono muted" style="margin-left:auto;font-size:12px">'+(ids.indexOf(id)+1)+" of "+ids.length+'</span></div>'+
+    '<h3 class="fd-title">'+esc(r.title)+'</h3>'+(by?'<div class="muted" style="font-size:12.5px;overflow-wrap:anywhere">'+by+'</div>':"")+
+    (r.summary?'<p class="fd-sum">'+esc(r.summary)+'</p>':'<p class="fd-sum muted">No summary yet. Press ✦ Summarize'+(has?"":" after attaching the PDF")+'.</p>')+
+    (!has&&!busy?'<div class="muted" style="font-size:12px">'+(link?"No PDF saved yet. "+(canFetchPdf()?"Get PDF tries the article's page; if it needs a login, download it and attach it.":"Attach the PDF to open it here."):"No PDF saved yet. Attach it to open it here.")+'</div>':"")+
+    '<div class="foot">'+pdfBtns+
+    '<button class="btn small" type="button" data-act="ref-sum" data-id="'+esc(id)+'"'+(busy?" disabled":"")+'>'+(busy==="sum"?'<span class="reading"><i></i><i></i><i></i></span> Summarizing':(r.summary?"✦ Summarize again":"✦ Summarize"))+'</button>'+
+    '<button class="btn small'+(ui.askOpen[id]?" on":"")+'" type="button" data-act="ref-ask-open" data-id="'+esc(id)+'">✦ Ask AI</button>'+
+    (link?'<a class="btn small ghost" href="'+esc(link)+'" target="_blank" rel="noopener">Website ↗</a>':"")+
+    '<button class="btn small ghost" type="button" data-act="edit" data-kind="ref" data-id="'+esc(id)+'">Edit</button></div>'+
+    (ui.askOpen[id]?renderAsk(k,id):"");
+  const inp=document.getElementById("askIn-"+k);
+  if(inp){if(draft)inp.value=draft;inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();askRef(id,inp.value);}});const lg=el.querySelector(".ask-log");if(lg)lg.scrollTop=lg.scrollHeight;}
+  if(animate){el.classList.remove("swap");void el.offsetWidth;el.classList.add("swap");}
+}
+function refAct(a,b){
+  const id=b.dataset.id,k=refKey(id);
+  if(a==="ref-attach"){if(readOnly){toast("You can view this desk but not change it.");return;}ui.attachFor=id;document.getElementById("refAttachIn").click();}
+  else if(a==="ref-getpdf"){if(readOnly)return;fetchRefPdf(id,true);}
+  else if(a==="ref-ask-open"){ui.askOpen[id]=!ui.askOpen[id];if(ui.refView[k]!=="float"){ui.refView[k]="float";saveRefUi();}const i=(ui.refList[k]||[]).indexOf(id);if(i>=0&&ui.refSel[k]!==id)flowTo(k,i);renderRefs(k);setTimeout(()=>{const inp=document.getElementById("askIn-"+k);const d=document.getElementById(k+"Detail");if(d&&d.scrollIntoView)d.scrollIntoView({behavior:"smooth",block:"nearest"});if(inp&&matchMedia("(hover: hover)").matches)inp.focus();},120);}
+  else if(a==="ref-ask-close"){ui.askOpen[id]=false;renderDetail(k);}
+  else if(a==="ref-ask"){const inp=document.getElementById("askIn-"+k);askRef(id,inp?inp.value:"");}
+  else if(a==="ref-ask-sug")askRef(id,b.textContent);
+}
+
+/* ---------- project plan import: turn a schedule file into tasks, milestones and events ---------- */
+const plan={k:null,status:"idle",rows:[],msg:"",open:false};
+async function fileText(f){
+  const nm=String(f.name||"").toLowerCase();
+  if(f.type==="application/pdf"||nm.endsWith(".pdf"))return (await pdfRead(f,40,false)).text;
+  if(nm.endsWith(".docx")){const mm=await loadMammoth();const r=await mm.extractRawText({arrayBuffer:await f.arrayBuffer()});return r&&r.value||"";}
+  if(/\.(xlsx|xls|ods|csv)$/.test(nm)){const X=await loadXlsx();const wb=X.read(new Uint8Array(await f.arrayBuffer()),{type:"array"});return wb.SheetNames.slice(0,6).map(n=>"Sheet "+n+":\n"+X.utils.sheet_to_csv(wb.Sheets[n])).join("\n\n");}
+  if(/\.(txt|md)$/.test(nm)||(f.type||"").indexOf("text/")===0)return await f.text();
+  throw {code:"bad_type"};
+}
+async function planIngest(k,files){
+  if(readOnly){toast("You can view this desk but not change it.");return;}
+  if(!aiCan()){plan.status="error";plan.msg=aiErr("need_account");renderPlan(k);return;}
+  plan.k=k;plan.status="reading";plan.rows=[];plan.msg="";plan.open=true;renderPlan(k);
+  try{
+    let text="";for(const f of files)text+="\n"+await fileText(f);
+    text=text.replace(/[ \t]+/g," ").trim();if(!text)throw {code:"no_text"};
+    const year=new Date().getFullYear();
+    const data=await aiJson('The text is a project plan, schedule, Gantt chart or task list. Today is '+TODAY+'. Extract the dated work items.\n\nReply with only JSON like {"items":[{"type":"task","title":"Submit CAD drawings","date":"'+year+'-12-04","time":""}]}\n\nRules:\n- type: "milestone" for stages, deliverables and submissions; "event" for meetings, presentations or visits; otherwise "task".\n- date: YYYY-MM-DD. If no year is written, use '+year+' (or '+(year+1)+' if the month has already passed). For a date range, use the end date. Skip items with no date at all.\n- time: HH:MM in 24-hour time, or "".\n- title: at most 80 characters.\n- At most 60 items. Do not invent items.\n\nPlan text:\n'+text.slice(0,40000),{max:3000});
+    const arr=Array.isArray(data)?data:(data&&Array.isArray(data.items)?data.items:[]);
+    plan.rows=arr.map(o=>({type:["task","milestone","event"].includes(o&&o.type)?o.type:"task",title:String(o&&o.title||"").trim().slice(0,100),date:isDate(String(o&&o.date||""))?String(o.date):"",time:/^\d{2}:\d{2}$/.test(String(o&&o.time||""))?o.time:"",keep:true})).filter(x=>x.title&&x.date).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,60);
+    if(plan.rows.length)plan.status="done";else{plan.status="error";plan.msg="No dated items were found in that file.";}
+  }catch(e){plan.status="error";plan.msg=e&&e.code==="no_text"?"No text could be read. If it's a scanned file or a picture, add items with the + buttons instead.":e&&e.code==="bad_type"?"Use a PDF, Word (.docx), Excel (.xlsx) or CSV file.":aiErr(e&&e.code);}
+  renderPlan(k);
+}
+function planSave(k){
+  const keep=plan.rows.filter(r=>r.keep);if(!keep.length){toast("Tick at least one item.");return;}
+  const now=new Date().toISOString();
+  keep.forEach(r=>{
+    if(r.type==="milestone")save("milestones","m-"+newId(),{title:r.title,project:k,due:r.date,status:"todo",createdAt:now});
+    else if(r.type==="event")save("events","e-"+newId(),{title:r.title,area:k,date:r.date,start:r.time,end:"",location:"",createdAt:now});
+    else save("tasks","t-"+newId(),{title:r.title,area:k,due:r.date,priority:"med",notes:"",done:false,createdAt:now});
+  });
+  Object.assign(plan,{status:"idle",rows:[],open:false,msg:""});renderPlan(k);replayEnter();toast("Added "+keep.length+" items");
+}
+function renderPlan(k){
+  const el=document.getElementById(k+"PlanPanel");if(!el)return;
+  if(!plan.open||plan.k!==k){el.innerHTML="";return;}
+  let h='<div class="lb-panel">';
+  if(plan.status==="reading")h+='<div class="imp-actions"><span class="reading"><i></i><i></i><i></i></span><span>'+aiWho()+' is reading your plan…</span></div>';
+  else if(plan.status==="done"){
+    const n=plan.rows.filter(r=>r.keep).length,lab={task:"Task",milestone:"Milestone",event:"Event"};
+    h+='<div class="eyebrow">Found '+plan.rows.length+' items · untick any that are wrong</div><div class="prev">'+plan.rows.map((r,i)=>'<label class="prev-row"><input type="checkbox" class="check" data-plan-keep="'+i+'"'+(r.keep?" checked":"")+'><span style="min-width:0"><span class="name">'+esc(r.title)+'</span><span class="when">'+lab[r.type]+' · '+fmtShort(r.date)+(r.time?" · "+r.time:"")+'</span></span></label>').join("")+'</div>'+
+      '<div class="imp-actions"><button class="btn primary" type="button" data-act="plan-save" data-k="'+k+'">Add '+n+' items</button><button class="btn" type="button" data-act="plan-close" data-k="'+k+'">Cancel</button></div>';
+  } else {
+    h+='<div class="drop" data-act="plan-pick" data-k="'+k+'" role="button" tabindex="0"><span><b>Import your project plan</b><br><span class="muted">PDF, Word, Excel or CSV. '+aiWho()+' finds the dates and turns them into tasks, milestones and meetings. You check them before anything is added.</span></span></div>';
+    if(plan.status==="error")h+='<div class="note">'+esc(plan.msg)+'</div>';
+    h+='<div><button class="btn small ghost" type="button" data-act="plan-close" data-k="'+k+'">Close</button></div>';
+  }
+  el.innerHTML=h+'</div>';
+}
+function planAct(a,b){
+  const k=b.dataset.k||plan.k||"idp";
+  if(a==="plan-open"){if(readOnly){toast("You can view this desk but not change it.");return;}plan.open=!(plan.open&&plan.k===k);plan.k=k;if(plan.status!=="reading"&&plan.status!=="done")plan.status="idle";renderPlan(k);}
+  else if(a==="plan-pick"){plan.k=k;document.getElementById("planIn").click();}
+  else if(a==="plan-save")planSave(k);
+  else if(a==="plan-close"){Object.assign(plan,{status:"idle",rows:[],open:false,msg:""});renderPlan(k);}
+}
+(function(){
+  const pi=document.getElementById("planIn");if(pi)pi.addEventListener("change",()=>{const fs=Array.from(pi.files||[]);pi.value="";if(fs.length)planIngest(plan.k||"idp",fs);});
+  const ai=document.getElementById("refAttachIn");if(ai)ai.addEventListener("change",()=>{const f=ai.files&&ai.files[0];ai.value="";if(f&&ui.attachFor)attachPdf(ui.attachFor,f);});
+  document.addEventListener("change",e=>{const t=e.target;if(t&&t.dataset&&t.dataset.planKeep!=null){const r=plan.rows[Number(t.dataset.planKeep)];if(r){r.keep=t.checked;renderPlan(plan.k);}}});
+})();
 /* ---------- pages ---------- */
 const VIEWS={desk:"viewDesk",timetable:"viewTimetable",fyp:"viewFyp",idp:"viewIdp",music:"viewMusic"};
 const REDUCED=(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}})();
