@@ -1,5 +1,5 @@
-// dash-io offline worker, build 20261121153343
-const SHELL = "fyd-shell-20261121153343";
+// dash-io offline worker, build 20261122174007
+const SHELL = "fyd-shell-20261122174007";
 const RUNTIME = "fyd-runtime-v1";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/favicon-32-blink.png"];
 const LIBS = [
@@ -20,6 +20,14 @@ async function cacheLibs() {
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES)).then(() => cacheLibs()).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith("fyd-shell-") && k !== SHELL).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const hash = (e.notification.data && e.notification.data.url) || "#desk";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ("focus" in c) { c.postMessage({ go: hash }); return c.focus(); } }
+    return self.clients.openWindow(new URL("./" + hash, self.registration.scope).href);
+  }));
 });
 self.addEventListener("fetch", e => {
   const req = e.request;
