@@ -896,6 +896,24 @@ video.dv-img{background:#000}
 .rep-btns small{font-weight:400;opacity:.75;font-size:11.5px}
 @media (max-width:480px){.rep-btns{grid-template-columns:1fr}}
 @media (max-width:560px){.kpis,.kpis.n3{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kpis.n3>:first-child{grid-column:1 / -1}.kpi{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}.kpi .ringw{width:54px;height:54px}.kpi .ring-n{font-size:12.5px}.kv{font-size:17px}}
+/* account + sync */
+.sync-btn{position:relative}
+.sync-btn .sync-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 2px var(--bg);transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1),background .3s}
+.sync-btn[data-st="ok"] .sync-dot{background:var(--ok);transform:scale(1)}
+.sync-btn[data-st="warn"] .sync-dot{background:var(--warn);transform:scale(1)}
+.sync-btn[data-st="busy"] svg{animation:syncPulse 1.1s ease-in-out infinite}
+.sync-btn[data-st="busy"] .sync-dot{background:var(--t-g3);transform:scale(1)}
+@keyframes syncPulse{50%{transform:translateY(-2px);opacity:.6}}
+#authDlg{width:min(440px, calc(100vw - 24px))}
+.acc-card{display:flex;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--sunk);border:1px solid var(--line)}
+.acc-card b{display:block}.acc-card small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis}
+.acc-av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:18px;color:#fff;background:linear-gradient(135deg,var(--t-g1),var(--t-g2));flex:none}
+.g-btn{justify-content:center;gap:10px;padding:11px;background:#fff;color:#1f1f1f;border-color:#dadce0;font-weight:600}
+.g-btn:hover{border-color:#bbb}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.linkbtn{border:none;background:none;padding:0;color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit}
+@media (max-width:420px){.top-r{gap:6px}.top-r .round{width:34px;height:34px}}
 /* notifications + calendars */
 .bell{position:relative}
 .bell .bell-dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--bg);transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
@@ -1031,7 +1049,7 @@ video.dv-img{background:#000}
 </aside>
 <main class="main">
 <header class="topbar"><button class="menu-btn" type="button" data-act="side-toggle" aria-label="Show sidebar" title="Show sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h16" fill="none"/></svg></button><h1 class="page-title" id="topTitle">Desk</h1>
-  <div class="top-r"><span class="top-clock"><b id="clock">--:--</b><span id="clockDate"></span></span><button class="round" type="button" data-act="palette" aria-label="Colours" title="Colours"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.4 17 3 12 3z" fill="none"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7.2" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg></button><button class="round bell" id="bellBtn" type="button" data-act="nt-open" aria-label="Notifications" title="Notifications"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8" fill="none"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" fill="none"/></svg><i class="bell-dot"></i></button><button class="btn small primary" data-act="new" data-kind="task" type="button">+ Task</button><button class="round avatar" type="button" data-act="settings" id="avatar" aria-label="Your profile and settings" title="Profile and settings">·</button></div>
+  <div class="top-r"><span class="top-clock"><b id="clock">--:--</b><span id="clockDate"></span></span><button class="round" type="button" data-act="palette" aria-label="Colours" title="Colours"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.4 17 3 12 3z" fill="none"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7.2" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg></button><button class="round sync-btn" id="syncBtn" type="button" data-act="acc-open" aria-label="Account and sync" title="Sign in to sync your devices" data-st="off" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 9.5z" fill="none"/></svg><i class="sync-dot"></i></button><button class="round bell" id="bellBtn" type="button" data-act="nt-open" aria-label="Notifications" title="Notifications"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8" fill="none"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" fill="none"/></svg><i class="bell-dot"></i></button><button class="btn small primary" data-act="new" data-kind="task" type="button">+ Task</button><button class="round avatar" type="button" data-act="settings" id="avatar" aria-label="Your profile and settings" title="Profile and settings">·</button></div>
 </header>
 
 <div class="wrap">
@@ -1141,6 +1159,7 @@ video.dv-img{background:#000}
 <div class="onb" id="onb" hidden></div>
 <div class="pop" id="pop" hidden role="dialog" aria-label="Colours"></div>
 <div class="pop npop" id="npop" hidden role="dialog" aria-label="Notifications"></div>
+<dialog id="authDlg"><div style="padding:20px;display:flex;flex-direction:column;gap:12px" id="authBody"></div></dialog>
 <dialog id="calDlg"><div style="padding:20px;display:flex;flex-direction:column;gap:12px" id="calBody"></div></dialog>
 <div class="pdfv" id="pdfv" hidden role="dialog" aria-label="PDF viewer"></div>
 <input type="file" id="importIn" accept="application/json,.json" hidden>
@@ -1215,12 +1234,13 @@ function onWriteError(e){
   else toast("Could not save. Check your connection and try again.");
 }
 function save(c,id,data){
-  S[c]=Object.assign({},S[c],{[id]:data});render();if(typeof calQueue==="function"){calQueue();pushQueue();}
+  if(data&&typeof data==="object")data._u=Date.now();
+  S[c]=Object.assign({},S[c],{[id]:data});render();if(typeof calQueue==="function"){calQueue();pushQueue();}if(typeof syncNote==="function")syncNote(c,id,data);
   if(mode==="db"){return enqueue(c+"/"+id,()=>db.collection(c).doc(id).set(data)).catch(onWriteError);}
   saveLocal();return Promise.resolve();
 }
 function remove(c,id){
-  const m=Object.assign({},S[c]);delete m[id];S[c]=m;render();if(typeof calQueue==="function"){calQueue();pushQueue();}
+  const m=Object.assign({},S[c]);delete m[id];S[c]=m;render();if(typeof calQueue==="function"){calQueue();pushQueue();}if(typeof syncNote==="function")syncNote(c,id,null);
   if(mode==="db"){return enqueue(c+"/"+id,()=>db.collection(c).doc(id).delete()).catch(onWriteError);}
   saveLocal();return Promise.resolve();
 }
@@ -1273,7 +1293,9 @@ function renderNotes(){
 function spFlash(){if(!SP.flash)return;const f=SP.flash;SP.flash="";setTimeout(()=>toast(f==="web"?"Done! Pick “This browser” in Play on to hear music here.":"Spotify connected · tap any song to play it",null,4500),900);if(f==="web"&&webPlayable())setTimeout(()=>spOpenDevices(""),1200);}
 let calStarted=false;
 function afterLoad(){
-  spFlash();updateBell();renderCalBtn();setTimeout(ntTick,1500);if(!calStarted){calStarted=true;calStartup();pushStartup();}
+  spFlash();updateBell();renderCalBtn();setTimeout(ntTick,1500);if(!calStarted){calStarted=true;calStartup();pushStartup();accStartup();
+    if(ACC.pendingSignIn){const j=ACC.pendingSignIn;ACC.pendingSignIn=null;accSignedIn(j);}
+    if(ACC.flashErr){const m=ACC.flashErr;ACC.flashErr="";setTimeout(()=>{toast(m,null,5000);openAuthDlg("signin");},900);}}
   navKey="";renderNavLinks();
   const h=location.hash.slice(1);if((VIEWS[h]||isCustom(h))&&hasPage(h)&&h!==view)setView(h);else if(!hasPage(view))setView("desk");
   bootDone();
@@ -1681,7 +1703,7 @@ function openForm(kind,id,preset){
   let html="",buf=[];
   pairs.forEach(p=>{if(p.half){buf.push(p.html);if(buf.length===2){html+='<div class="fl-row">'+buf.join("")+'</div>';buf=[];}}else{if(buf.length){html+='<div class="fl-row">'+buf.join("")+'<div></div></div>';buf=[];}html+=p.html;}});
   if(buf.length)html+='<div class="fl-row">'+buf.join("")+'<div></div></div>';
-  if(kind==="settings")html+='<div class="fl"><span class="lbl">Backup</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="button" data-act="export">Export data</button>'+(PWA?'<button class="btn small" type="button" data-act="import">Import data</button>':"")+'<button class="btn small ghost" type="button" data-act="pages">Pages…</button><button class="btn small ghost" type="button" data-act="cal-open">Calendars…</button></div><span class="muted" style="font-size:12px">'+(PWA?"Saved on this device. Export a backup to move it to another device.":mode==="db"?"Synced with claude.ai.":"")+'</span></div>';
+  if(kind==="settings")html+='<div class="fl"><span class="lbl">Backup</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="button" data-act="export">Export data</button>'+(PWA?'<button class="btn small" type="button" data-act="import">Import data</button>':"")+'<button class="btn small ghost" type="button" data-act="pages">Pages…</button><button class="btn small ghost" type="button" data-act="cal-open">Calendars…</button>'+(PWA?'<button class="btn small ghost" type="button" data-act="acc-open">Account &amp; sync…</button>':'')+'</div><span class="muted" style="font-size:12px">'+(PWA?"Saved on this device. Export a backup to move it to another device.":mode==="db"?"Synced with claude.ai.":"")+'</span></div>';
   document.getElementById("dlgFields").innerHTML=html;
   document.getElementById("dlgDelete").hidden=cur.isNew||kind==="checkin"||kind==="settings"||kind==="project"||kind==="fyp"||kind==="words";
   try{dlg.showModal();}catch(e){dlg.setAttribute("open","");}
@@ -1748,6 +1770,7 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act;
   if(MQ.matches&&b.closest(".side")&&a!=="side-toggle"&&a!=="go")setTimeout(()=>setSide("closed"),0);
   if(a==="go"){e.preventDefault();const v=b.dataset.view;setView(v);if(MQ.matches)setSide("closed");try{history.replaceState(null,"","#"+v);}catch(err){}return;}
+  if(a&&a.indexOf("acc-")===0){closeNotifPop();accAct(a,b);return;}
   if(a&&a.indexOf("nt-")===0){ntAct(a,b);return;}
   if(a&&a.indexOf("cal-")===0&&["cal-open","cal-close","cal-connect","cal-reauth","cal-sync","cal-show","cal-push","cal-off","cal-ext"].includes(a)){if(a==="cal-open")closeNotifPop();calAct(a,b);return;}
   if(a==="palette"){const p=document.getElementById("pop");closeNotifPop();if(p.hidden)openPop();else closePop();return;}
@@ -1821,7 +1844,8 @@ document.addEventListener("click",e=>{
   else if(a==="export")exportData();
   else if(a==="import"){const i=document.getElementById("importIn");if(i)i.click();}
   else if(a==="import-cancel"){pendingImport=null;setNote("import",null);}
-  else if(a==="import-confirm"){if(!pendingImport)return;const d=pendingImport;pendingImport=null;COLLS.forEach(c=>{S[c]=d[c]&&typeof d[c]==="object"?d[c]:{};});setNote("import",null);saveLocal();render();replayEnter();toast("Data imported");}
+  else if(a==="import-confirm"){if(!pendingImport)return;const d=pendingImport;pendingImport=null;COLLS.forEach(c=>{S[c]=d[c]&&typeof d[c]==="object"?d[c]:{};});setNote("import",null);saveLocal();render();replayEnter();toast("Data imported");
+    if(typeof syncOn==="function"&&syncOn()){const now=Date.now();COLLS.forEach(c=>Object.entries(S[c]).forEach(([id,doc])=>{if(doc&&typeof doc==="object"){doc._u=now;ACC.out[c+"/"+id]={coll:c,id,data:doc,u:now};}}));outSave();syncSoon();}}
   else if(a==="new-sem"){
     if(readOnly){toast("You can view this desk but not change it.");return;}
     if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Click again to clear all classes";setTimeout(()=>{b.dataset.armed="";b.textContent="New semester";},3500);return;}
@@ -2081,7 +2105,7 @@ function pdfHref(r){if(PWA)return ui.blobUrl[r.id]||"";const u=String(r.pdfUrl||
 const X_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const TRASH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none"/></svg>';
 ui.refTouch={};ui.refTouchList=null;
-function hasPdf(r){if(!r)return false;if(PWA)return !!r.localPdf;return !!pdfHref(r);}
+function hasPdf(r){if(!r)return false;if(PWA)return !!(r.localPdf||r.cloud);return !!pdfHref(r);}
 function markTouch(k){const st=document.getElementById(k+"Stage");if(st)st.querySelectorAll(".fcard").forEach(c=>c.classList.toggle("touched",ui.refTouch[k]===c.dataset.id));}
 function clearTouch(){
   if(ui.docTouch){ui.docTouch=null;document.querySelectorAll(".ftile.touched").forEach(el=>el.classList.remove("touched"));}
@@ -2091,7 +2115,7 @@ function clearTouch(){
 function deleteRef(id){
   const r=S.refs[id];if(!r)return;const k=r.project==="idp"?"idp":"fyp";
   ui.refTouch[k]=null;ui.refTouchList=null;
-  const t=setTimeout(()=>{if(r.pdfId&&assetsNs){try{assetsNs.delete(r.pdfId).catch(()=>{});}catch(e){}}if(PWA&&r.localPdf)idb.del("pdf",id).catch(()=>{});if(ui.blobUrl[id]){try{URL.revokeObjectURL(ui.blobUrl[id]);}catch(e){}delete ui.blobUrl[id];}},9000);
+  const t=setTimeout(()=>{if(r.pdfId&&assetsNs){try{assetsNs.delete(r.pdfId).catch(()=>{});}catch(e){}}if(PWA&&r.localPdf)idb.del("pdf",id).catch(()=>{});if(r.cloud)cloudDelete("ref",id);if(ui.blobUrl[id]){try{URL.revokeObjectURL(ui.blobUrl[id]);}catch(e){}delete ui.blobUrl[id];}},9000);
   remove("refs",id);
   toast("Article deleted",{label:"Undo",fn:()=>{clearTimeout(t);save("refs",id,r);ui.refSel[k]=id;renderRefs(k);}},9000);
 }
@@ -2111,7 +2135,7 @@ async function openPdf(id){
   pdfvShell(r.title||"PDF",'<div class="pdfv-msg"><span class="reading"><i></i><i></i><i></i></span><span>Opening the PDF…</span></div>');
   try{
     let blob=null;
-    if(PWA&&r.localPdf)blob=await idb.get("pdf",id);
+    if(PWA){blob=r.localPdf?await idb.get("pdf",id).catch(()=>null):null;if(!blob&&r.cloud){const b=document.getElementById("pdfvBody");if(b)b.innerHTML='<div class="pdfv-msg"><span class="reading"><i></i><i></i><i></i></span><span>Downloading from your account…</span></div>';blob=await cloudBlob("ref",id,"pdf",id);}}
     else{const u=pdfHref(r);if(u){const res=await fetch(u);if(res.ok)blob=await res.blob();}}
     if(!blob)throw new Error("missing");
     if(tok!==pv.token)return;
@@ -2683,7 +2707,7 @@ function renderOnb(){
   const mark=document.querySelector(".brand .mark");const mk=mark?mark.outerHTML.replace(/id="mk/g,'id="ob').replace(/url\(#mk/g,"url(#ob"):"";
   let body="";
   if(s===0)body='<div>'+mk+'</div><h2>Hi, I\'m dash-io.</h2><p class="muted" style="margin:0">Your personal desk for tasks, classes and projects. Let\'s set it up in under a minute.</p>'+
-    '<div class="fl"><label for="onbName">What should I call you?</label><input class="field big-field" id="onbName" autocomplete="given-name" maxlength="40" placeholder="Your name" value="'+esc(v.name)+'"></div>';
+    '<div class="fl"><label for="onbName">What should I call you?</label><input class="field big-field" id="onbName" autocomplete="given-name" maxlength="40" placeholder="Your name" value="'+esc(v.name)+'"></div>'+(typeof accCan==="function"&&accCan()?'<div class="muted" style="font-size:13px">Already use dash-io on another device? <button class="linkbtn" type="button" data-act="acc-open">Sign in</button> to bring everything here.</div>':'');
   else if(s===1)body='<h2>Your studies</h2><p class="muted" style="margin:0">Optional. It lets dash-io show your semester week.</p>'+
     '<div class="fl"><label for="onbCourse">Course or programme</label><input class="field" id="onbCourse" maxlength="80" placeholder="e.g. Mechanical Engineering, Year 4" value="'+esc(v.course)+'"></div>'+
     '<div class="fl"><label for="onbSem">First day of this semester</label><input class="field" id="onbSem" type="date" value="'+esc(v.semStart)+'"></div>';
@@ -3346,14 +3370,14 @@ async function addFiles(k,files){
     setTimeout(()=>{ui.docUp[k]=(ui.docUp[k]||[]).filter(j=>j!==job);rerenderFiles(k);},job.err?9000:2500);
   }
 }
-function discardBlob(d){if(d.local)idb.del("pdf","doc-"+d.id).catch(()=>{});if(d.assetId&&assetsNs){try{assetsNs.delete(d.assetId).catch(()=>{});}catch(e){}}}
+function discardBlob(d){if(d.cloud)cloudDelete("doc",d.id);if(d.local)idb.del("pdf","doc-"+d.id).catch(()=>{});if(d.assetId&&assetsNs){try{assetsNs.delete(d.assetId).catch(()=>{});}catch(e){}}}
 function deleteDoc(id){
   const d=S.docs[id];if(!d)return;const full=Object.assign({id},d);ui.docTouch=null;
   const t=setTimeout(()=>discardBlob(full),9000);remove("docs",id);
   toast("File deleted",{label:"Undo",fn:()=>{clearTimeout(t);save("docs",id,d);}},9000);
 }
 async function docBlob(d){
-  if(d.local){const b=await idb.get("pdf","doc-"+d.id);if(!b)throw new Error("missing");return b;}
+  if(d.local||d.cloud){let b=d.local?await idb.get("pdf","doc-"+d.id).catch(()=>null):null;if(!b&&d.cloud)b=await cloudBlob("doc",d.id,"pdf","doc-"+d.id);if(!b)throw new Error("missing");return b;}
   if(d.assetId){const r=await fetch("/_blob/"+d.assetId);if(!r.ok)throw new Error("missing");
     if(d.enc==="b64"){const bin=atob((await r.text()).trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:d.mime||""});}
     return r.blob();}
@@ -3701,11 +3725,11 @@ async function calHandleRedirect(){
   if(!calCan())return;
   const h=new URLSearchParams(location.hash.slice(1)),q=new URLSearchParams(location.search);
   const raw=h.get("state")||q.get("state");if(!raw)return;
-  let o=null;try{o=JSON.parse(unb64url(raw));}catch(e){return;}if(!o||(o.p!=="g"&&o.p!=="m"))return;
+  let o=null;try{o=JSON.parse(unb64url(raw));}catch(e){return;}if(!o||(o.p!=="g"&&o.p!=="m"&&o.p!=="a"))return;
   const back=VIEWS[o.back]||/^p-/.test(String(o.back||""))?o.back:"desk";
   try{history.replaceState(null,"",spRedirect()+"#"+back);}catch(e){}
   if(lsGet("dashio.cal.state")!==raw){CAL.flashErr="That sign-in didn't match. Try again.";return;}
-  lsSet("dashio.cal.state",null);const p=o.p,c=CAL[p];
+  lsSet("dashio.cal.state",null);if(o.p==="a"){await accHandleGoogle(h,o);return;}const p=o.p,c=CAL[p];
   if(p==="g"){
     const err=h.get("error");
     if(err){if(/interaction_required|login_required|consent_required|account_selection_required/.test(err)){CAL.retryG=true;}else{c.needAuth=true;calSave("g");CAL.flashErr=err==="access_denied"?"Google sign-in was cancelled.":"Google said: "+err;}return;}
@@ -3928,6 +3952,199 @@ async function calAct(a,b){
     const cid=CAL[p].cid;CAL[p]={cid,show:true,push:true};calSave(p);CAL.ext[p]=[];lsSet("dashio.cal.ext",JSON.stringify({g:CAL.ext.g,m:CAL.ext.m}));renderCalDlg();renderCalBtn();render();toast(CALP[p].name+" disconnected. The dash-io calendar stays in your account until you delete it there.",null,5000);
   }
   else if(a==="cal-ext"){const u=b.dataset.u;if(/^https:\/\//.test(u||""))window.open(u,"_blank","noopener");}
+}
+/* ---------- account + sync across devices ---------- */
+const API=()=>String(window.DIO_PUSH||"");
+const ACC={tok:"",user:null,cursor:0,merged:false,last:0,busy:false,err:"",out:{},outLoaded:false,cfg:null,files:{},mode:"signin"};
+try{const a=JSON.parse(lsGet("dashio.acct")||"{}")||{};Object.assign(ACC,{tok:a.tok||"",user:a.user||null,cursor:Number(a.cursor)||0,merged:!!a.merged,last:Number(a.last)||0});}catch(e){}
+const accSave=()=>lsSet("dashio.acct",JSON.stringify({tok:ACC.tok,user:ACC.user,cursor:ACC.cursor,merged:ACC.merged,last:ACC.last}));
+const accCan=()=>PWA&&!!API();
+const syncOn=()=>accCan()&&!!ACC.tok;
+async function outLoad(){if(ACC.outLoaded)return;try{const o=await idb.get("kv","outbox");if(o&&typeof o==="object")ACC.out=Object.assign(o,ACC.out);}catch(e){}ACC.outLoaded=true;}
+let outSaveT=0;
+function outSave(){clearTimeout(outSaveT);outSaveT=setTimeout(()=>{idb.put("kv","outbox",ACC.out).catch(()=>{});},300);}
+function syncNote(c,id,data){
+  if(!syncOn())return;
+  ACC.out[c+"/"+id]={coll:c,id,data:data==null?null:data,u:(data&&data._u)||Date.now()};outSave();syncSoon();
+}
+async function api(method,path,body,raw){
+  const h={};if(ACC.tok)h.Authorization="Bearer "+ACC.tok;
+  let b;if(raw){b=raw.body;if(raw.type)h["Content-Type"]=raw.type;}else if(body!==undefined){h["Content-Type"]="application/json";b=JSON.stringify(body);}
+  const r=await fetch(API()+path,{method,headers:h,body:b});
+  if(raw&&raw.blob&&r.ok)return r.blob();
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&ACC.tok&&!/^\/auth\/(login|signup|google)$/.test(path)){accSignedOut("Your session ended. Sign in again to keep syncing.");throw {code:"signed_out"};}
+  if(!r.ok)throw {code:j.error||"http_"+r.status,status:r.status,retry:j.retry};
+  return j;
+}
+async function pwHash(email,pass){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveBits"]);
+  return b64url(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:new TextEncoder().encode("dash-io|"+email.trim().toLowerCase()),iterations:150000},k,256));
+}
+function accSignedOut(msg){ACC.tok="";ACC.user=null;ACC.cursor=0;ACC.merged=false;ACC.out={};outSave();accSave();ACC.err=msg||"";renderSyncBtn();renderAuthDlg();if(msg)toast(msg,null,5000);}
+async function accSignedIn(j){
+  ACC.tok=j.token;ACC.user=j.user;ACC.cursor=0;ACC.merged=false;ACC.err="";accSave();
+  const d=document.getElementById("authDlg");if(d&&d.open)d.close();
+  toast("Signed in as "+j.user.email+" · syncing…",null,3000);
+  await syncNow(true);
+  if(onb.open&&!needsSetup()){document.getElementById("onb").hidden=true;onb.open=false;}
+  replayEnter();
+}
+/* first sync on this device: anything already in your account wins; things only here get uploaded */
+async function syncNow(full){
+  if(!syncOn()||ACC.busy||!navigator.onLine)return;
+  ACC.busy=true;renderSyncBtn();
+  try{
+    await outLoad();
+    if(!ACC.merged){
+      let since=0,items=[],more=true,n=0;
+      while(more&&n<20){const j=await api("GET","/sync/pull?since="+since);items=items.concat(j.items||[]);since=j.cursor;more=j.more;n++;if(j.user){ACC.user=j.user;}}
+      const seen=new Set();
+      items.forEach(it=>{if(!S[it.coll])return;seen.add(it.coll+"/"+it.id);const m=Object.assign({},S[it.coll]);if(it.data==null)delete m[it.id];else m[it.id]=it.data;S[it.coll]=m;});
+      COLLS.forEach(c=>Object.entries(S[c]||{}).forEach(([id,doc])=>{const k=c+"/"+id;if(!seen.has(k)&&doc&&!doc.example)ACC.out[k]={coll:c,id,data:doc,u:doc._u||Date.now()};}));
+      ACC.cursor=since;ACC.merged=true;accSave();outSave();saveLocal();render();
+    }
+    await syncPushOut();
+    let more=true,n=0,changed=false;
+    while(more&&n<10){
+      const j=await api("GET","/sync/pull?since="+ACC.cursor);more=j.more;n++;if(j.user)ACC.user=j.user;
+      (j.items||[]).forEach(it=>{
+        if(!S[it.coll])return;const k=it.coll+"/"+it.id;if(ACC.out[k])return;
+        const cur=S[it.coll][it.id];if(cur&&(cur._u||0)>it.u)return;
+        const m=Object.assign({},S[it.coll]);if(it.data==null){if(!(it.id in m))return;delete m[it.id];}else m[it.id]=it.data;S[it.coll]=m;changed=true;
+      });
+      ACC.cursor=j.cursor;
+    }
+    ACC.last=Date.now();ACC.err="";accSave();
+    if(changed){saveLocal();render();if(typeof calQueue==="function"){calQueue();pushQueue();}}
+    syncFiles();
+  }catch(e){if(e&&e.code!=="signed_out")ACC.err=navigator.onLine?"Couldn't sync just now. dash-io will keep trying.":"Offline. Changes sync when you're back online.";}
+  finally{ACC.busy=false;renderSyncBtn();renderAuthDlg();}
+}
+async function syncPushOut(){
+  for(let round=0;round<20;round++){
+    const keys=Object.keys(ACC.out).slice(0,150);if(!keys.length)return;
+    const batch=keys.map(k=>ACC.out[k]);
+    await api("POST","/sync/push",{changes:batch});
+    keys.forEach((k,i)=>{if(ACC.out[k]===batch[i])delete ACC.out[k];});outSave();
+  }
+}
+let syncT=0;
+function syncSoon(){if(!syncOn())return;clearTimeout(syncT);syncT=setTimeout(()=>syncNow(),1500);}
+function accStartup(){
+  if(!accCan())return;
+  renderSyncBtn();
+  if(syncOn())syncNow();
+  setInterval(()=>{if(!document.hidden&&syncOn()&&Date.now()-ACC.last>20000)syncNow();},5000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&syncOn())syncNow();});
+  window.addEventListener("online",()=>{if(syncOn())syncNow();});
+}
+/* files: PDFs and documents follow you too */
+function fileKey(kind,id){return kind==="ref"?"r-"+String(id).replace(/^r-/,""):"d-"+String(id).replace(/^d-/,"");}
+async function syncFiles(){
+  if(!syncOn()||ACC.filesBusy)return;ACC.filesBusy=true;
+  try{
+    const jobs=[];
+    Object.entries(S.refs||{}).forEach(([id,r])=>{if(r&&r.localPdf&&!r.cloud)jobs.push(["refs",id,"pdf",id]);});
+    Object.entries(S.docs||{}).forEach(([id,d])=>{if(d&&d.local&&!d.cloud)jobs.push(["docs",id,"pdf","doc-"+id]);});
+    for(const [coll,id,store,bk] of jobs.slice(0,6)){
+      let blob=null;try{blob=await idb.get(store,bk);}catch(e){}
+      if(!blob)continue;if(blob.size>20*1048576)continue;
+      try{await api("PUT","/files/"+fileKey(coll==="refs"?"ref":"doc",id),undefined,{body:blob,type:blob.type||"application/octet-stream"});
+        const cur=S[coll][id];if(cur){const n=Object.assign({},cur,{cloud:true});save(coll,id,n);}}
+      catch(e){if(e&&e.code==="quota"){ACC.err="Your file storage is full (300 MB). New files stay on this device.";break;}}
+    }
+  }finally{ACC.filesBusy=false;}
+}
+async function cloudBlob(kind,id,store,bk){
+  if(!syncOn())return null;
+  try{const b=await api("GET","/files/"+fileKey(kind,id),undefined,{blob:true});if(b&&b.size){idb.put(store,bk,b).catch(()=>{});return b;}}catch(e){}
+  return null;
+}
+function cloudDelete(kind,id){if(syncOn())api("DELETE","/files/"+fileKey(kind,id)).catch(()=>{});}
+
+/* sign-in UI */
+const CLOUD_IC='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 9.5z" fill="none"/></svg>';
+function renderSyncBtn(){
+  const b=document.getElementById("syncBtn");if(!b)return;
+  b.hidden=!accCan();
+  const st=!syncOn()?"off":ACC.busy?"busy":ACC.err?"warn":"ok";
+  b.dataset.st=st;b.title=st==="off"?"Sign in to sync your devices":st==="busy"?"Syncing…":st==="warn"?ACC.err:"Synced "+(ACC.last?ago(new Date(ACC.last).toISOString()):"");
+}
+async function accConfig(){if(ACC.cfg)return ACC.cfg;try{ACC.cfg=await api("GET","/auth/config");}catch(e){ACC.cfg={google:""};}renderAuthDlg();return ACC.cfg;}
+function openAuthDlg(mode){const d=document.getElementById("authDlg");if(!d)return;if(mode)ACC.mode=mode;ACC.formErr="";try{if(!d.open)d.showModal();}catch(e){d.setAttribute("open","");}renderAuthDlg();accConfig();}
+function renderAuthDlg(){
+  const d=document.getElementById("authDlg"),el=document.getElementById("authBody");if(!d||!el||!d.open)return;
+  let h='<div class="card-head"><div><div class="eyebrow">Account</div><h3>'+(syncOn()?"Your account":ACC.mode==="signup"?"Create your account":"Sign in")+'</h3></div><button class="icon-btn" type="button" data-act="acc-close" aria-label="Close">✕</button></div>';
+  if(!accCan()){el.innerHTML=h+'<div class="note info" style="font-size:13px">Sign-in and sync work in the installed dash-io app (fadh-alt.github.io/fadhs-desk). This claude.ai version already saves to your claude.ai account.</div>';return;}
+  if(syncOn()){
+    const u=ACC.user||{},pend=Object.keys(ACC.out).length;
+    h+='<div class="acc-card"><span class="acc-av">'+esc((u.name||u.email||"?").charAt(0).toUpperCase())+'</span><span style="min-width:0"><b>'+esc(u.name||u.email||"")+'</b><small>'+esc(u.email||"")+'</small></span></div>'+
+      '<div class="push-st'+(ACC.err?"":" ok")+'"><span class="beacon'+(ACC.busy?"":" still")+'"></span><span>'+(ACC.busy?"Syncing…":ACC.err?esc(ACC.err):"<b>Synced</b> "+(ACC.last?ago(new Date(ACC.last).toISOString()):"")+". Your tasks, pages, timetable, files and settings follow you to every device you sign in on.")+(pend&&!ACC.busy?" · "+pend+" change"+(pend>1?"s":"")+" waiting":"")+'</span></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small primary" type="button" data-act="acc-sync"'+(ACC.busy?" disabled":"")+'>Sync now</button><button class="btn small" type="button" data-act="acc-signout">Sign out</button></div>'+
+      '<details class="calp-steps"><summary>Password and account</summary><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'+
+      (u.password?'<div class="fl"><label for="accOld">Current password</label><input class="field" id="accOld" type="password" autocomplete="current-password"></div>':"")+
+      '<div class="fl"><label for="accNew">'+(u.password?"New password":"Set a password (so you can sign in with email too)")+'</label><input class="field" id="accNew" type="password" autocomplete="new-password" minlength="8"></div>'+
+      '<div><button class="btn small" type="button" data-act="acc-pw">'+(u.password?"Change password":"Set password")+'</button></div>'+
+      '<div class="muted" style="font-size:12px">Deleting your account removes everything stored online. Your data stays on this device.</div><div><button class="btn small danger" type="button" data-act="acc-delete">Delete my account</button></div></div></details>';
+    el.innerHTML=h;return;
+  }
+  const up=ACC.mode==="signup",g=ACC.cfg&&ACC.cfg.google;
+  h+='<p class="muted" style="margin:0;font-size:13px">'+(up?"One account keeps dash-io the same on your phone, laptop and any other device.":"Sign in to get your dash-io on this device and keep everything in sync.")+'</p>';
+  if(g)h+='<button class="btn g-btn" type="button" data-act="acc-google"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button><div class="or"><span>or with email</span></div>';
+  h+=(up?'<div class="fl"><label for="accName">Your name</label><input class="field" id="accName" autocomplete="given-name" maxlength="40" value="'+esc(userName())+'"></div>':"")+
+    '<div class="fl"><label for="accEmail">Email</label><input class="field" id="accEmail" type="email" autocomplete="email" inputmode="email" value="'+esc(ACC.lastEmail||"")+'"></div>'+
+    '<div class="fl"><label for="accPw">Password</label><input class="field" id="accPw" type="password" autocomplete="'+(up?"new-password":"current-password")+'" minlength="8" placeholder="'+(up?"At least 8 characters":"")+'"></div>'+
+    (ACC.formErr?'<div class="note" style="font-size:13px">'+esc(ACC.formErr)+'</div>':"")+
+    '<button class="btn primary" type="button" data-act="acc-submit"'+(ACC.working?" disabled":"")+'>'+(ACC.working?'<span class="reading"><i></i><i></i><i></i></span>':up?"Create account":"Sign in")+'</button>'+
+    '<div class="muted" style="font-size:12.5px;text-align:center">'+(up?'Already have an account? <button class="linkbtn" type="button" data-act="acc-mode" data-m="signin">Sign in</button>':'New to dash-io sync? <button class="linkbtn" type="button" data-act="acc-mode" data-m="signup">Create an account</button>')+'</div>'+
+    (up?"":'<details class="calp-steps"><summary>Forgot your password?</summary><p class="muted" style="font-size:12.5px;margin:8px 0 0">'+(g?"Use <b>Continue with Google</b> with the same email. Then set a new password under Password and account.":"Passwords can't be reset by email yet. Ask the person who runs your dash-io to reset it.")+'</p></details>')+
+    '<div class="muted" style="font-size:11.5px">Your data is stored in dash-io\'s private database and is only readable after signing in. Your password never leaves this device in readable form.</div>';
+  el.innerHTML=h;
+  el.querySelectorAll("input.field").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();accAct("acc-submit",el.querySelector('[data-act="acc-submit"]'));}}));
+}
+const ACC_ERR={email_taken:"That email already has an account. Sign in instead.",wrong_login:"That email and password don't match.",bad_email:"Check the email address.",use_google:"This account signs in with Google. Use Continue with Google.",locked:"Too many tries. Wait a few minutes and try again.",bad_google:"Google sign-in couldn't be confirmed. Try again."};
+async function accAct(a,b){
+  if(a==="acc-open")openAuthDlg(syncOn()?null:"signin");
+  else if(a==="acc-close"){document.getElementById("authDlg").close();}
+  else if(a==="acc-mode"){ACC.mode=b.dataset.m;ACC.formErr="";renderAuthDlg();}
+  else if(a==="acc-submit"){
+    const email=((document.getElementById("accEmail")||{}).value||"").trim(),pass=(document.getElementById("accPw")||{}).value||"",name=((document.getElementById("accName")||{}).value||"").trim();
+    ACC.lastEmail=email;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ACC.formErr="Enter your email address.";renderAuthDlg();return;}
+    if(pass.length<8){ACC.formErr="Use at least 8 characters for the password.";renderAuthDlg();return;}
+    ACC.working=true;ACC.formErr="";renderAuthDlg();
+    try{const pw=await pwHash(email,pass);const j=await api("POST",ACC.mode==="signup"?"/auth/signup":"/auth/login",{email,pw,name,device:(IS_IOS?"iPhone":navigator.platform||"device").slice(0,40)});ACC.working=false;await accSignedIn(j);}
+    catch(e){ACC.working=false;ACC.formErr=(e&&ACC_ERR[e.code])||(e&&e.code==="locked"?ACC_ERR.locked:"Couldn't reach dash-io. Check your connection.");renderAuthDlg();}
+  }
+  else if(a==="acc-google"){
+    const cfg=await accConfig();if(!cfg.google)return;
+    const nonce=randStr(24),st=b64urlText(JSON.stringify({p:"a",n:randStr(12),back:view||"desk"}));
+    lsSet("dashio.cal.state",st);lsSet("dashio.acc.nonce",nonce);
+    location.href="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:cfg.google,redirect_uri:spRedirect(),response_type:"id_token",scope:"openid email profile",nonce,state:st,prompt:"select_account"}).toString();
+  }
+  else if(a==="acc-sync"){syncNow();renderAuthDlg();}
+  else if(a==="acc-signout"){
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Press again to sign out";setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Sign out";}},3000);return;}
+    try{await syncPushOut();}catch(e){}
+    api("POST","/auth/logout",{}).catch(()=>{});accSignedOut("");renderAuthDlg();toast("Signed out. Your data stays on this device.");
+  }
+  else if(a==="acc-pw"){
+    const old=(document.getElementById("accOld")||{}).value||"",nw=(document.getElementById("accNew")||{}).value||"";
+    if(nw.length<8){toast("Use at least 8 characters.");return;}
+    try{const em=ACC.user.email;await api("POST","/auth/password",{old:old?await pwHash(em,old):"",pw:await pwHash(em,nw)});ACC.user.password=true;accSave();renderAuthDlg();toast("Password saved. Other devices will need to sign in again.");}
+    catch(e){toast(e&&e.code==="wrong_login"?"The current password isn't right.":"Couldn't save the password.");}
+  }
+  else if(a==="acc-delete"){
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Press again to delete everything online";setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Delete my account";}},4000);return;}
+    try{await api("POST","/auth/delete",{});accSignedOut("");renderAuthDlg();toast("Account deleted. Your data is still on this device.");}catch(e){toast("Couldn't delete the account right now.");}
+  }
+}
+async function accHandleGoogle(h,o){
+  const idToken=h.get("id_token"),nonce=lsGet("dashio.acc.nonce")||"";lsSet("dashio.acc.nonce",null);
+  if(h.get("error")||!idToken){ACC.flashErr=h.get("error")==="access_denied"?"Google sign-in was cancelled.":"Google sign-in didn't finish. Try again.";return;}
+  try{const j=await api("POST","/auth/google",{idToken,nonce,device:(IS_IOS?"iPhone":navigator.platform||"device").slice(0,40)});ACC.pendingSignIn=j;}
+  catch(e){ACC.flashErr=ACC_ERR[e&&e.code]||"Google sign-in didn't finish. Try again.";}
 }
 /* ---------- pages ---------- */
 const VIEWS={desk:"viewDesk",timetable:"viewTimetable",fyp:"viewFyp",idp:"viewIdp",music:"viewMusic"};
