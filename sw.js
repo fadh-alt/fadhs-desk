@@ -1,5 +1,5 @@
-// dash-io offline worker, build 20261122180113
-const SHELL = "fyd-shell-20261122180113";
+// dash-io offline worker, build 20261122182336
+const SHELL = "fyd-shell-20261122182336";
 const RUNTIME = "fyd-runtime-v1";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/favicon-32-blink.png"];
 const LIBS = [
@@ -17,7 +17,7 @@ async function cacheLibs() {
     try { if (await c.match(u)) return; const r = await fetch(new Request(u, { mode: "no-cors" })); if (r && (r.ok || r.type === "opaque")) await c.put(u, r); } catch (e) {}
   }));
 }
-self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES)).then(() => cacheLibs()).then(() => self.skipWaiting())); });
+self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => cacheLibs()).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith("fyd-shell-") && k !== SHELL).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
@@ -39,7 +39,11 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (req.mode === "navigate") {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(SHELL).then(c => c.put("index.html", copy)); return r; }).catch(() => caches.match("index.html")));
+    e.respondWith(caches.open(SHELL).then(c => c.match("index.html").then(hit => {
+      const net = fetch(req, { cache: "no-store" }).then(r => { if (r && r.ok) c.put("index.html", r.clone()); return r; });
+      if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
+      return net.catch(() => caches.match("index.html"));
+    })));
     return;
   }
   if (url.origin === self.location.origin) {

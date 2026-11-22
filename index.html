@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background:#081329">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
 <title>dash-io</title>
 <meta name="description" content="dash-io: your personal desk for tasks, calendar, timetable, projects and music.">
 <meta name="theme-color" content="#081329">
@@ -38,7 +39,7 @@ img{max-width:100%}
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 <style>
 /* dash-io: frosted-glass panels floating over a slow ambient backdrop. Palette (data-palette) and light/dark (data-mode) live on <html>. */
 @property --t-base{syntax:"<color>";inherits:true;initial-value:#081329}
@@ -1013,7 +1014,7 @@ video.dv-img{background:#000}
 }
 </style>
 
-<script>(function(){var r=document.documentElement,m="dark";try{var l=JSON.parse(localStorage.getItem("dashio.look")||"{}");if(l.p&&l.p!=="navy")r.setAttribute("data-palette",l.p);m=l.m||"dark";if(m==="auto")m=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}catch(e){}r.setAttribute("data-mode",m);r.classList.add("booting");})();</script>
+<script>window.__dioT0=performance.now();(function(){var r=document.documentElement,m="dark";try{var l=JSON.parse(localStorage.getItem("dashio.look")||"{}");if(l.p&&l.p!=="navy")r.setAttribute("data-palette",l.p);m=l.m||"dark";if(m==="auto")m=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}catch(e){}r.setAttribute("data-mode",m);r.classList.add("booting");})();</script>
 <div class="amb" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="splash" id="splash" aria-hidden="true"><div class="sp-in"><svg class="sp-mark" viewBox="0 0 100 100"><defs><linearGradient id="spBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fc"/><stop offset="1" stop-color="#d0dbf0"/></linearGradient><linearGradient id="spBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#345496"/><stop offset="1" stop-color="#0d1b38"/></linearGradient><linearGradient id="spScr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4063a8"/><stop offset="1" stop-color="#162852"/></linearGradient></defs><rect width="100" height="100" rx="23" fill="url(#spBg)"/><rect x="45.5" y="65" width="9" height="13" fill="#13254a"/><rect x="35" y="76.8" width="30" height="4.4" rx="1.5" fill="#0d1b38"/><rect x="19" y="20.5" width="62" height="47" rx="7.5" fill="url(#spBody)"/><rect x="22.5" y="24" width="55" height="40" rx="5" fill="url(#spScr)"/><g class="eyes"><ellipse cx="42.5" cy="45.5" rx="4.2" ry="7.2" fill="#ffffff"/><ellipse cx="57.5" cy="45.5" rx="4.2" ry="7.2" fill="#ffffff"/></g></svg></div></div>
 <div class="shell preload">
@@ -2738,7 +2739,7 @@ function reveal(){
   const sk=document.getElementById("skel");if(sk){sk.classList.add("out");setTimeout(()=>sk.remove(),450);}
   replayEnter();if(view==="fyp"||view==="idp")setTimeout(()=>positionFlow(view),60);
 }
-setTimeout(splashOut,(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}})()?0:Math.max(0,950-performance.now()));
+setTimeout(splashOut,(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}})()?0:Math.max(0,800-(performance.now()-(window.__dioT0||0))));
 setTimeout(bootDone,4500);
 
 /* ---------- mascot eyes follow the pointer ---------- */
