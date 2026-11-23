@@ -1,5 +1,5 @@
-// dash-io offline worker, build 20261122190829
-const SHELL = "fyd-shell-20261122190829";
+// dash-io offline worker, build 20261123064846
+const SHELL = "fyd-shell-20261123064846";
 const RUNTIME = "fyd-runtime-v1";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/favicon-32-blink.png"];
 const LIBS = [
@@ -9,7 +9,7 @@ const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
-  "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+  "https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
 ].filter(Boolean);
 async function cacheLibs() {
   const c = await caches.open(RUNTIME);
